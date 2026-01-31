@@ -11,6 +11,12 @@ importers:
       '@tanstack/react-router':
         specifier: ^1.157.17
         version: 1.157.17(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      dexie:
+        specifier: ^4.3.0
+        version: 4.3.0
+      dexie-react-hooks:
+        specifier: ^4.2.0
+        version: 4.2.0(@types/react@19.2.10)(dexie@4.3.0)(react@19.2.4)
       jotai:
         specifier: ^2.17.0
         version: 2.17.0(@babel/core@7.28.6)(@babel/template@7.28.6)(@types/react@19.2.10)(react@19.2.4)
@@ -569,6 +575,16 @@ packages:
     peerDependenciesMeta:
       supports-color:
         optional: true
+
+  dexie-react-hooks@4.2.0:
+    resolution: {integrity: sha512-u7KqTX9JpBQK8+tEyA9X0yMGXlSCsbm5AU64N6gjvGk/IutYDpLBInMYEAEC83s3qhIvryFS+W+sqLZUBEvePQ==}
+    peerDependencies:
+      '@types/react': '>=16'
+      dexie: '>=4.2.0-alpha.1 <5.0.0'
+      react: '>=16'
+
+  dexie@4.3.0:
+    resolution: {integrity: sha512-5EeoQpJvMKHe6zWt/FSIIuRa3CWlZeIl6zKXt+Lz7BU6RoRRLgX9dZEynRfXrkLcldKYCBiz7xekTEylnie1Ug==}
 
   electron-to-chromium@1.5.283:
     resolution: {integrity: sha512-3vifjt1HgrGW/h76UEeny+adYApveS9dH2h3p57JYzBSXJIKUJAvtmIytDKjcSCt9xHfrNCFJ7gts6vkhuq++w==}
@@ -1242,6 +1258,14 @@ snapshots:
   debug@4.4.3:
     dependencies:
       ms: 2.1.3
+
+  dexie-react-hooks@4.2.0(@types/react@19.2.10)(dexie@4.3.0)(react@19.2.4):
+    dependencies:
+      '@types/react': 19.2.10
+      dexie: 4.3.0
+      react: 19.2.4
+
+  dexie@4.3.0: {}
 
   electron-to-chromium@1.5.283: {}
 
