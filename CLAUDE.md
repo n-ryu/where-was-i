@@ -5,6 +5,9 @@
 ## 프로젝트 개요
 
 프로젝트의 목표와 내용은 [README.md](./README.md)를 참조하세요.
+상세 요구사항은 [PRD.md](./PRD.md)를 참조하세요.
+기술 스택은 [TECH_STACK.md](./TECH_STACK.md)를 참조하세요.
+Claude Code 고급 기능 활용 계획은 [CLAUDE_FEATURES.md](./CLAUDE_FEATURES.md)를 참조하세요.
 
 ## 언어
 
@@ -39,3 +42,45 @@
 - 설정 파일 추가/수정 시 커밋
 - 기능 구현 시 논리적 단위마다 커밋
 - 리팩토링과 기능 변경은 반드시 별도 커밋
+
+## 개발 명령어
+
+프로젝트 초기화 후 사용할 명령어입니다.
+
+```bash
+# 의존성 설치
+pnpm install
+
+# 개발 서버 실행
+pnpm dev
+
+# 프로덕션 빌드
+pnpm build
+
+# 빌드 결과물 미리보기
+pnpm preview
+
+# 타입 체크
+pnpm typecheck
+
+# 린트 검사
+pnpm lint
+
+# 린트 자동 수정
+pnpm lint:fix
+
+# 포맷팅 검사
+pnpm format:check
+
+# 포맷팅 적용
+pnpm format
+
+# 테스트 실행
+pnpm test
+
+# 테스트 (watch 모드)
+pnpm test:watch
+
+# 커밋 전 전체 검사 (타입체크 + 린트 + 테스트)
+pnpm check
+```
