@@ -112,8 +112,8 @@ interface PlanPageLayoutProps {
 
 function PlanPageLayout({
   initialPhase = 'entry',
-  uncompletedTasks = [],
-  todayTasks = [],
+  uncompletedTasks: initialUncompletedTasks = [],
+  todayTasks: initialTodayTasks = [],
   onBatchStatusChange = fn(),
   onUpdate = fn(),
   onDelete = fn(),
@@ -126,6 +126,11 @@ function PlanPageLayout({
   const [uncompletedStepDone, setUncompletedStepDone] = useState(
     initialPhase === 'create'
   )
+  // 내부 상태로 과업 목록 관리
+  const [uncompletedTasks, setUncompletedTasks] = useState<Task[]>(
+    initialUncompletedTasks
+  )
+  const [todayTasks, setTodayTasks] = useState<Task[]>(initialTodayTasks)
 
   const hasUncompletedTasks = uncompletedTasks.length > 0
 
@@ -150,7 +155,19 @@ function PlanPageLayout({
   }
 
   const handleProceed = () => {
-    onMoveToToday(Array.from(selectedTaskIds))
+    const selectedIds = Array.from(selectedTaskIds)
+    onMoveToToday(selectedIds)
+
+    // 선택된 과업을 오늘 과업으로 이동
+    const movedTasks = uncompletedTasks.filter((task) =>
+      selectedIds.includes(task.id)
+    )
+    const remainingTasks = uncompletedTasks.filter(
+      (task) => !selectedIds.includes(task.id)
+    )
+
+    setTodayTasks((prev) => [...movedTasks, ...prev])
+    setUncompletedTasks(remainingTasks)
     setUncompletedStepDone(true)
     setCurrentPhase('create')
   }

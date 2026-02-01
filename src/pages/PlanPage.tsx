@@ -1,11 +1,11 @@
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useNavigate } from '@tanstack/react-router'
 import styled from 'styled-components'
+import { motion, AnimatePresence } from 'framer-motion'
 import { TaskList, type TaskStatusChange } from '../components/TaskList'
 import { FloatingInput } from '../components/FloatingInput'
 import { UncompletedTaskList } from '../components/UncompletedTaskList'
-import { StepIndicator } from '../components/StepIndicator'
 import {
   getTasksByDate,
   getUncompletedTasksBefore,
@@ -17,77 +17,90 @@ import {
 
 const Container = styled.div`
   padding: 16px;
-  padding-bottom: 100px; /* FloatingInput 공간 */
+  padding-bottom: 100px;
   max-width: 600px;
   margin: 0 auto;
 `
 
-const Header = styled.h1`
-  margin-bottom: 24px;
-  text-align: center;
-`
-
-const Section = styled.div`
-  margin-bottom: 24px;
-`
-
-const SectionTitle = styled.h2`
-  font-size: 18px;
-  margin-bottom: 16px;
-`
-
-const ButtonContainer = styled.div`
+const ChatContainer = styled.div`
   display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 24px;
+  flex-direction: column;
+  gap: 16px;
 `
 
-const Button = styled.button`
+const MessageBubble = styled(motion.div)<{ $type: 'system' | 'user' }>`
+  padding: 16px;
+  border-radius: 16px;
+  background: ${(props) => (props.$type === 'system' ? '#f0f4f8' : '#e3f2fd')};
+  max-width: 85%;
+  align-self: ${(props) =>
+    props.$type === 'system' ? 'flex-start' : 'flex-end'};
+`
+
+const SystemMessage = styled.div`
+  font-size: 15px;
+  color: #333;
+  line-height: 1.5;
+`
+
+const Greeting = styled.div`
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #1976d2;
+`
+
+const ActionButton = styled.button`
   padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 16px;
+  border-radius: 24px;
+  font-size: 15px;
   cursor: pointer;
-`
-
-const PrimaryButton = styled(Button)`
   background: #1976d2;
   color: white;
   border: none;
+  margin-top: 12px;
 
   &:hover {
     background: #1565c0;
   }
+
+  &:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
 `
 
-const EntryContainer = styled.div`
-  text-align: center;
-  padding: 48px 16px;
+const SectionCard = styled(motion.div)`
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e0e0e0;
 `
 
-const Greeting = styled.h2`
-  font-size: 24px;
-  margin-bottom: 16px;
-  color: #333;
-`
-
-const EntryMessage = styled.p`
+const SectionTitle = styled.h3`
+  font-size: 14px;
   color: #666;
-  margin-bottom: 32px;
-  font-size: 16px;
+  margin-bottom: 12px;
+  font-weight: 500;
 `
 
-const StartButton = styled(PrimaryButton)`
-  padding: 16px 48px;
-  font-size: 18px;
+const CompletedBadge = styled.span`
+  display: inline-block;
+  padding: 4px 8px;
+  background: #e8f5e9;
+  color: #4caf50;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-left: 8px;
 `
 
-type PlanStep = 'entry' | 'uncompleted' | 'create'
+const SelectedCount = styled.span`
+  color: #1976d2;
+  font-weight: 500;
+`
 
-const STEPS = [
-  { key: 'uncompleted', label: '미완료 선택' },
-  { key: 'create', label: '과업 추가' },
-]
+type PlanPhase = 'entry' | 'uncompleted' | 'create'
 
 function getTodayDate(): string {
   const today = new Date()
@@ -101,11 +114,18 @@ function getGreeting(): string {
   return '좋은 저녁이에요!'
 }
 
+const bubbleVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+}
+
 export function PlanPage() {
   const navigate = useNavigate()
   const today = getTodayDate()
-  const [userStep, setUserStep] = useState<PlanStep>('entry')
+  const [currentPhase, setCurrentPhase] = useState<PlanPhase>('entry')
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set())
+  const [uncompletedStepDone, setUncompletedStepDone] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const uncompletedTasks = useLiveQuery(
     () => getUncompletedTasksBefore(today),
@@ -113,46 +133,33 @@ export function PlanPage() {
   )
   const todayTasks = useLiveQuery(() => getTasksByDate(today), [today])
 
-  // 현재 단계 계산
-  const { currentStep, completedSteps, showStepIndicator } = useMemo(() => {
-    // 엔트리 단계에서는 StepIndicator를 숨김
-    if (userStep === 'entry') {
-      return {
-        currentStep: 'entry' as PlanStep,
-        completedSteps: [] as string[],
-        showStepIndicator: false,
-      }
-    }
+  const isUncompletedLoaded = uncompletedTasks !== undefined
+  const hasUncompletedTasks = isUncompletedLoaded && uncompletedTasks.length > 0
 
-    const hasUncompletedTasks =
-      uncompletedTasks !== undefined && uncompletedTasks.length > 0
-
-    // 미완료 과업이 없으면 자동으로 create 단계로
-    if (userStep === 'uncompleted' && !hasUncompletedTasks) {
-      return {
-        currentStep: 'create' as PlanStep,
-        completedSteps: ['uncompleted'],
-        showStepIndicator: true,
-      }
+  // 미완료 과업이 없으면 자동으로 create 단계로 간주
+  const effectivePhase = useMemo(() => {
+    if (
+      currentPhase === 'uncompleted' &&
+      isUncompletedLoaded &&
+      !hasUncompletedTasks
+    ) {
+      return 'create'
     }
+    return currentPhase
+  }, [currentPhase, isUncompletedLoaded, hasUncompletedTasks])
 
-    if (userStep === 'create') {
-      return {
-        currentStep: 'create' as PlanStep,
-        completedSteps: ['uncompleted'],
-        showStepIndicator: true,
-      }
+  // 스크롤 애니메이션
+  useEffect(() => {
+    if (containerRef.current?.scrollTo) {
+      containerRef.current.scrollTo({
+        top: containerRef.current.scrollHeight,
+        behavior: 'smooth',
+      })
     }
-
-    return {
-      currentStep: userStep,
-      completedSteps: [] as string[],
-      showStepIndicator: true,
-    }
-  }, [userStep, uncompletedTasks])
+  }, [effectivePhase, uncompletedStepDone])
 
   const handleStart = () => {
-    setUserStep('uncompleted')
+    setCurrentPhase('uncompleted')
   }
 
   const handleToggleTask = (taskId: string) => {
@@ -168,11 +175,11 @@ export function PlanPage() {
   }
 
   const handleProceed = async () => {
-    // 선택된 과업들을 오늘 날짜로 변경
     for (const taskId of selectedTaskIds) {
       await updateTask(taskId, { date: today })
     }
-    setUserStep('create')
+    setUncompletedStepDone(true)
+    setCurrentPhase('create')
   }
 
   const handleCreateTask = async (title: string) => {
@@ -198,74 +205,118 @@ export function PlanPage() {
     navigate({ to: '/' })
   }
 
-  const getStepTitle = () => {
-    switch (currentStep) {
-      case 'uncompleted':
-        return '미완료 과업 선택'
-      case 'create':
-        return '오늘 과업 추가'
-      default:
-        return ''
-    }
-  }
-
-  // 엔트리 단계
-  if (currentStep === 'entry') {
-    return (
-      <Container>
-        <EntryContainer>
-          <Greeting>{getGreeting()}</Greeting>
-          <EntryMessage>오늘 하루도 화이팅! 계획을 세워볼까요?</EntryMessage>
-          <StartButton onClick={handleStart}>시작하기</StartButton>
-        </EntryContainer>
-      </Container>
-    )
-  }
+  const showUncompleted = effectivePhase !== 'entry' && hasUncompletedTasks
+  const showCreate = effectivePhase === 'create' || uncompletedStepDone
 
   return (
-    <Container>
-      <Header>오늘의 계획</Header>
-      {showStepIndicator && (
-        <StepIndicator
-          steps={STEPS}
-          currentStep={currentStep}
-          completedSteps={completedSteps}
+    <Container ref={containerRef}>
+      <ChatContainer>
+        {/* 엔트리: 인사 메시지 */}
+        <MessageBubble
+          $type="system"
+          variants={bubbleVariants}
+          initial="hidden"
+          animate="visible"
+          transition={{ duration: 0.3 }}
+        >
+          <Greeting>{getGreeting()}</Greeting>
+          <SystemMessage>오늘 하루도 화이팅! 계획을 세워볼까요?</SystemMessage>
+          {currentPhase === 'entry' && (
+            <ActionButton onClick={handleStart} disabled={!isUncompletedLoaded}>
+              {isUncompletedLoaded ? '시작하기' : '로딩 중...'}
+            </ActionButton>
+          )}
+        </MessageBubble>
+
+        <AnimatePresence>
+          {/* Step 1: 미완료 과업 선택 */}
+          {showUncompleted && (
+            <SectionCard
+              key="uncompleted"
+              variants={bubbleVariants}
+              initial="hidden"
+              animate="visible"
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <SectionTitle>
+                미완료 과업
+                {uncompletedStepDone && <CompletedBadge>완료</CompletedBadge>}
+              </SectionTitle>
+
+              {!uncompletedStepDone ? (
+                <>
+                  <SystemMessage style={{ marginBottom: 12, color: '#666' }}>
+                    어제 완료하지 못한 과업이 있어요. 오늘 계속할 과업을
+                    선택해주세요.
+                  </SystemMessage>
+                  <UncompletedTaskList
+                    tasks={uncompletedTasks || []}
+                    selectedIds={selectedTaskIds}
+                    onToggle={handleToggleTask}
+                  />
+                  <ActionButton onClick={handleProceed}>
+                    {selectedTaskIds.size > 0 ? (
+                      <>
+                        <SelectedCount>{selectedTaskIds.size}개</SelectedCount>{' '}
+                        선택 완료
+                      </>
+                    ) : (
+                      '선택 없이 진행'
+                    )}
+                  </ActionButton>
+                </>
+              ) : (
+                <SystemMessage style={{ color: '#666' }}>
+                  {selectedTaskIds.size > 0
+                    ? `${selectedTaskIds.size}개의 과업을 오늘 계획에 추가했어요.`
+                    : '미완료 과업 없이 진행했어요.'}
+                </SystemMessage>
+              )}
+            </SectionCard>
+          )}
+
+          {/* Step 2: 오늘 과업 추가 */}
+          {showCreate && (
+            <SectionCard
+              key="create"
+              variants={bubbleVariants}
+              initial="hidden"
+              animate="visible"
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
+              <SectionTitle>오늘의 과업</SectionTitle>
+              <SystemMessage style={{ marginBottom: 12, color: '#666' }}>
+                오늘 할 일을 추가해주세요. 아래 입력창에 과업을 입력하면 돼요.
+              </SystemMessage>
+
+              <TaskList
+                tasks={todayTasks || []}
+                onBatchStatusChange={handleBatchStatusChange}
+                onUpdate={handleUpdate}
+                onDelete={handleDelete}
+              />
+
+              <ActionButton
+                onClick={handleComplete}
+                disabled={(todayTasks || []).length === 0}
+                style={{ marginTop: 16 }}
+              >
+                {(todayTasks || []).length > 0
+                  ? `${todayTasks?.length}개 과업으로 시작하기`
+                  : '과업을 추가해주세요'}
+              </ActionButton>
+            </SectionCard>
+          )}
+        </AnimatePresence>
+      </ChatContainer>
+
+      {showCreate && (
+        <FloatingInput
+          placeholder="새 과업을 입력하세요"
+          onSubmit={handleCreateTask}
         />
-      )}
-
-      <SectionTitle>{getStepTitle()}</SectionTitle>
-
-      {currentStep === 'uncompleted' && (
-        <Section>
-          <UncompletedTaskList
-            tasks={uncompletedTasks || []}
-            selectedIds={selectedTaskIds}
-            onToggle={handleToggleTask}
-          />
-          <ButtonContainer>
-            <PrimaryButton onClick={handleProceed}>진행하기</PrimaryButton>
-          </ButtonContainer>
-        </Section>
-      )}
-
-      {currentStep === 'create' && (
-        <>
-          <Section>
-            <TaskList
-              tasks={todayTasks || []}
-              onBatchStatusChange={handleBatchStatusChange}
-              onUpdate={handleUpdate}
-              onDelete={handleDelete}
-            />
-          </Section>
-          <ButtonContainer>
-            <PrimaryButton onClick={handleComplete}>완료</PrimaryButton>
-          </ButtonContainer>
-          <FloatingInput
-            placeholder="새 과업을 입력하세요"
-            onSubmit={handleCreateTask}
-          />
-        </>
       )}
     </Container>
   )

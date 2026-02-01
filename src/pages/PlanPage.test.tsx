@@ -43,7 +43,7 @@ describe('PlanPage', () => {
       ).toBeInTheDocument()
     })
 
-    it('시작하기 버튼 클릭 시 다음 단계로 이동해야 한다', async () => {
+    it('시작하기 버튼 클릭 시 다음 단계가 아래에 추가되어야 한다', async () => {
       render(<PlanPage />)
 
       await waitFor(() => {
@@ -53,13 +53,19 @@ describe('PlanPage', () => {
       fireEvent.click(screen.getByText('시작하기'))
 
       await waitFor(() => {
-        expect(screen.getByText('오늘의 계획')).toBeInTheDocument()
+        // 미완료 과업이 없으면 바로 오늘의 과업 섹션 표시
+        expect(screen.getByText('오늘의 과업')).toBeInTheDocument()
       })
+
+      // 인사 메시지는 여전히 표시되어야 함 (채팅형 UI)
+      expect(
+        screen.getByText('오늘 하루도 화이팅! 계획을 세워볼까요?')
+      ).toBeInTheDocument()
     })
   })
 
-  describe('StepIndicator', () => {
-    it('시작 후 2단계 진행 표시기가 표시되어야 한다', async () => {
+  describe('채팅형 UI', () => {
+    it('시작 후 인사 메시지가 유지되어야 한다', async () => {
       render(<PlanPage />)
 
       await waitFor(() => {
@@ -69,9 +75,13 @@ describe('PlanPage', () => {
       fireEvent.click(screen.getByText('시작하기'))
 
       await waitFor(() => {
-        expect(screen.getByText('미완료 선택')).toBeInTheDocument()
-        expect(screen.getByText('과업 추가')).toBeInTheDocument()
+        expect(screen.getByText('오늘의 과업')).toBeInTheDocument()
       })
+
+      // 인사 메시지가 여전히 보여야 함
+      expect(
+        screen.getByText('오늘 하루도 화이팅! 계획을 세워볼까요?')
+      ).toBeInTheDocument()
     })
   })
 
@@ -90,10 +100,11 @@ describe('PlanPage', () => {
 
       await waitFor(() => {
         expect(screen.getByText('어제 과업')).toBeInTheDocument()
+        expect(screen.getByText('미완료 과업')).toBeInTheDocument()
       })
     })
 
-    it('미완료 과업이 없으면 자동으로 Step 2로 이동해야 한다', async () => {
+    it('미완료 과업이 없으면 바로 오늘 과업 섹션이 표시되어야 한다', async () => {
       render(<PlanPage />)
 
       await waitFor(() => {
@@ -103,7 +114,7 @@ describe('PlanPage', () => {
       fireEvent.click(screen.getByText('시작하기'))
 
       await waitFor(() => {
-        expect(screen.getByText('오늘 과업 추가')).toBeInTheDocument()
+        expect(screen.getByText('오늘의 과업')).toBeInTheDocument()
       })
     })
 
@@ -133,7 +144,7 @@ describe('PlanPage', () => {
       expect(checkbox).toHaveAttribute('aria-checked', 'false')
     })
 
-    it('진행하기 클릭 시 선택된 과업이 오늘로 이동해야 한다', async () => {
+    it('선택 완료 클릭 시 선택된 과업이 오늘로 이동해야 한다', async () => {
       const yesterday = getYesterdayString()
       const task = await taskRepository.createTask({
         title: '어제 과업',
@@ -155,8 +166,8 @@ describe('PlanPage', () => {
       // 과업 선택
       fireEvent.click(screen.getByRole('checkbox'))
 
-      // 진행하기 클릭
-      fireEvent.click(screen.getByText('진행하기'))
+      // 선택 완료 클릭
+      fireEvent.click(screen.getByText(/선택 완료/))
 
       await waitFor(async () => {
         const updatedTask = await taskRepository.getTask(task.id)
@@ -207,7 +218,7 @@ describe('PlanPage', () => {
       })
     })
 
-    it('완료 버튼 클릭 시 메인 화면으로 이동해야 한다', async () => {
+    it('과업 추가 후 시작하기 버튼 클릭 시 메인 화면으로 이동해야 한다', async () => {
       render(<PlanPage />)
 
       await waitFor(() => {
@@ -217,10 +228,23 @@ describe('PlanPage', () => {
       fireEvent.click(screen.getByText('시작하기'))
 
       await waitFor(() => {
-        expect(screen.getByText('완료')).toBeInTheDocument()
+        expect(
+          screen.getByPlaceholderText('새 과업을 입력하세요')
+        ).toBeInTheDocument()
       })
 
-      fireEvent.click(screen.getByText('완료'))
+      // 과업 추가
+      fireEvent.change(screen.getByPlaceholderText('새 과업을 입력하세요'), {
+        target: { value: '테스트 과업' },
+      })
+      fireEvent.click(screen.getByRole('button', { name: '추가' }))
+
+      await waitFor(() => {
+        expect(screen.getByText('테스트 과업')).toBeInTheDocument()
+      })
+
+      // 시작하기 버튼 클릭
+      fireEvent.click(screen.getByText(/과업으로 시작하기/))
 
       expect(mockNavigate).toHaveBeenCalledWith({ to: '/' })
     })
