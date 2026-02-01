@@ -7,7 +7,7 @@ import {
   useRouterState,
 } from '@tanstack/react-router'
 import styled from 'styled-components'
-import { HomePage, PlanPage, ReviewPage, SettingsPage } from './pages'
+import { HomePage, PlanPage, LogPage, SettingsPage } from './pages'
 
 const AppContainer = styled.div`
   display: flex;
@@ -108,7 +108,7 @@ const planRoute = createRoute({
 const logRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/log',
-  component: ReviewPage,
+  component: LogPage,
 })
 
 const settingsRoute = createRoute({
