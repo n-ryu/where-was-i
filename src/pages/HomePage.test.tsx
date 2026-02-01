@@ -215,14 +215,14 @@ describe('HomePage', () => {
       const listItem = screen.getByText('원래 제목').closest('li')!
 
       // 편집 버튼 클릭
-      fireEvent.click(within(listItem).getByRole('button', { name: '편집' }))
+      fireEvent.click(within(listItem).getByTitle('편집'))
 
       // 제목 수정
       const input = within(listItem).getByDisplayValue('원래 제목')
       fireEvent.change(input, { target: { value: '수정된 제목' } })
 
       // 저장
-      fireEvent.click(within(listItem).getByRole('button', { name: '저장' }))
+      fireEvent.click(within(listItem).getByTitle('저장'))
 
       await waitFor(() => {
         expect(screen.getByText('수정된 제목')).toBeInTheDocument()
@@ -245,9 +245,7 @@ describe('HomePage', () => {
       const listItem = taskElement.closest('li')!
 
       // 해당 아이템의 삭제 버튼 클릭
-      const deleteButton = within(listItem).getByRole('button', {
-        name: '삭제',
-      })
+      const deleteButton = within(listItem).getByTitle('삭제')
       fireEvent.click(deleteButton)
 
       // 확인 버튼이 나타날 때까지 대기 후 클릭

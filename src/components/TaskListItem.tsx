@@ -85,12 +85,29 @@ const Actions = styled.div`
   gap: 8px;
 `
 
-const Button = styled.button`
+const IconButton = styled.button`
+  padding: 6px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  opacity: 0.6;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.05);
+    opacity: 1;
+  }
+`
+
+const TextButton = styled.button`
   padding: 4px 8px;
   border: 1px solid #ddd;
   border-radius: 4px;
   background: white;
   cursor: pointer;
+  font-size: 12px;
 
   &:hover {
     background: #f5f5f5;
@@ -236,19 +253,27 @@ export function TaskListItem({
       <Actions>
         {isDeleting ? (
           <DeleteConfirm>
-            <span>정말 삭제하시겠습니까?</span>
-            <Button onClick={handleDeleteConfirm}>확인</Button>
-            <Button onClick={handleDeleteCancel}>취소</Button>
+            <span>삭제할까요?</span>
+            <TextButton onClick={handleDeleteConfirm}>확인</TextButton>
+            <TextButton onClick={handleDeleteCancel}>취소</TextButton>
           </DeleteConfirm>
         ) : isEditing ? (
           <>
-            <Button onClick={handleSave}>저장</Button>
-            <Button onClick={handleCancel}>취소</Button>
+            <IconButton onClick={handleSave} title="저장">
+              ✓
+            </IconButton>
+            <IconButton onClick={handleCancel} title="취소">
+              ✕
+            </IconButton>
           </>
         ) : (
           <>
-            <Button onClick={() => setIsEditing(true)}>편집</Button>
-            <Button onClick={() => setIsDeleting(true)}>삭제</Button>
+            <IconButton onClick={() => setIsEditing(true)} title="편집">
+              ✎
+            </IconButton>
+            <IconButton onClick={() => setIsDeleting(true)} title="삭제">
+              🗑
+            </IconButton>
           </>
         )}
       </Actions>

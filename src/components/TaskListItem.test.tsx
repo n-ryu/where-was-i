@@ -131,13 +131,13 @@ describe('TaskListItem', () => {
   describe('편집', () => {
     it('편집 버튼 클릭 시 편집 모드로 전환한다', () => {
       render(<TaskListItem {...defaultProps} />)
-      fireEvent.click(screen.getByText('편집'))
+      fireEvent.click(screen.getByTitle('편집'))
       expect(screen.getByDisplayValue('테스트 과업')).toBeInTheDocument()
     })
 
     it('편집 모드에서 제목을 수정할 수 있다', () => {
       render(<TaskListItem {...defaultProps} />)
-      fireEvent.click(screen.getByText('편집'))
+      fireEvent.click(screen.getByTitle('편집'))
       const input = screen.getByDisplayValue('테스트 과업')
       fireEvent.change(input, { target: { value: '수정된 과업' } })
       expect(screen.getByDisplayValue('수정된 과업')).toBeInTheDocument()
@@ -146,10 +146,10 @@ describe('TaskListItem', () => {
     it('저장 버튼 클릭 시 변경 사항을 저장하고 편집 모드를 종료한다', () => {
       const onUpdate = vi.fn()
       render(<TaskListItem {...defaultProps} onUpdate={onUpdate} />)
-      fireEvent.click(screen.getByText('편집'))
+      fireEvent.click(screen.getByTitle('편집'))
       const input = screen.getByDisplayValue('테스트 과업')
       fireEvent.change(input, { target: { value: '수정된 과업' } })
-      fireEvent.click(screen.getByText('저장'))
+      fireEvent.click(screen.getByTitle('저장'))
       expect(onUpdate).toHaveBeenCalledWith('task-1', {
         title: '수정된 과업',
       })
@@ -158,10 +158,10 @@ describe('TaskListItem', () => {
 
     it('취소 버튼 클릭 시 변경 사항을 취소하고 편집 모드를 종료한다', () => {
       render(<TaskListItem {...defaultProps} />)
-      fireEvent.click(screen.getByText('편집'))
+      fireEvent.click(screen.getByTitle('편집'))
       const input = screen.getByDisplayValue('테스트 과업')
       fireEvent.change(input, { target: { value: '수정된 과업' } })
-      fireEvent.click(screen.getByText('취소'))
+      fireEvent.click(screen.getByTitle('취소'))
       expect(screen.queryByDisplayValue('수정된 과업')).not.toBeInTheDocument()
       expect(screen.getByText('테스트 과업')).toBeInTheDocument()
     })
@@ -170,25 +170,23 @@ describe('TaskListItem', () => {
   describe('삭제', () => {
     it('삭제 버튼 클릭 시 삭제 확인 UI를 표시한다', () => {
       render(<TaskListItem {...defaultProps} />)
-      fireEvent.click(screen.getByText('삭제'))
-      expect(screen.getByText('정말 삭제하시겠습니까?')).toBeInTheDocument()
+      fireEvent.click(screen.getByTitle('삭제'))
+      expect(screen.getByText('삭제할까요?')).toBeInTheDocument()
     })
 
     it('삭제 확인 시 onDelete를 호출한다', () => {
       const onDelete = vi.fn()
       render(<TaskListItem {...defaultProps} onDelete={onDelete} />)
-      fireEvent.click(screen.getByText('삭제'))
+      fireEvent.click(screen.getByTitle('삭제'))
       fireEvent.click(screen.getByText('확인'))
       expect(onDelete).toHaveBeenCalledWith('task-1')
     })
 
     it('삭제 취소 시 삭제 확인 UI를 닫는다', () => {
       render(<TaskListItem {...defaultProps} />)
-      fireEvent.click(screen.getByText('삭제'))
+      fireEvent.click(screen.getByTitle('삭제'))
       fireEvent.click(screen.getByText('취소'))
-      expect(
-        screen.queryByText('정말 삭제하시겠습니까?')
-      ).not.toBeInTheDocument()
+      expect(screen.queryByText('삭제할까요?')).not.toBeInTheDocument()
     })
   })
 })
