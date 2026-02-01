@@ -211,6 +211,11 @@ export function TaskListItem({
             type="text"
             value={editTitle}
             onChange={(e) => setEditTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleSave()
+              }
+            }}
             $inProgress={isInProgress}
             autoFocus
           />
