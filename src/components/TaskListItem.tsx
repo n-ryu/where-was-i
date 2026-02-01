@@ -86,31 +86,21 @@ const Actions = styled.div`
 `
 
 const IconButton = styled.button`
-  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
   border: none;
   border-radius: 4px;
   background: transparent;
   cursor: pointer;
-  font-size: 16px;
-  line-height: 1;
+  font-size: 14px;
   opacity: 0.6;
 
   &:hover {
     background: rgba(0, 0, 0, 0.05);
     opacity: 1;
-  }
-`
-
-const TextButton = styled.button`
-  padding: 4px 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: white;
-  cursor: pointer;
-  font-size: 12px;
-
-  &:hover {
-    background: #f5f5f5;
   }
 `
 
@@ -254,8 +244,12 @@ export function TaskListItem({
         {isDeleting ? (
           <DeleteConfirm>
             <span>삭제할까요?</span>
-            <TextButton onClick={handleDeleteConfirm}>확인</TextButton>
-            <TextButton onClick={handleDeleteCancel}>취소</TextButton>
+            <IconButton onClick={handleDeleteConfirm} title="확인">
+              ✓
+            </IconButton>
+            <IconButton onClick={handleDeleteCancel} title="취소">
+              ✕
+            </IconButton>
           </DeleteConfirm>
         ) : isEditing ? (
           <>

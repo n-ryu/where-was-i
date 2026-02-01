@@ -250,11 +250,9 @@ describe('HomePage', () => {
 
       // 확인 버튼이 나타날 때까지 대기 후 클릭
       await waitFor(() => {
-        expect(
-          within(listItem).getByRole('button', { name: '확인' })
-        ).toBeInTheDocument()
+        expect(within(listItem).getByTitle('확인')).toBeInTheDocument()
       })
-      fireEvent.click(within(listItem).getByRole('button', { name: '확인' }))
+      fireEvent.click(within(listItem).getByTitle('확인'))
 
       await waitFor(() => {
         expect(screen.queryByText('삭제할 과업')).not.toBeInTheDocument()

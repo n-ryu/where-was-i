@@ -178,14 +178,14 @@ describe('TaskListItem', () => {
       const onDelete = vi.fn()
       render(<TaskListItem {...defaultProps} onDelete={onDelete} />)
       fireEvent.click(screen.getByTitle('삭제'))
-      fireEvent.click(screen.getByText('확인'))
+      fireEvent.click(screen.getByTitle('확인'))
       expect(onDelete).toHaveBeenCalledWith('task-1')
     })
 
     it('삭제 취소 시 삭제 확인 UI를 닫는다', () => {
       render(<TaskListItem {...defaultProps} />)
       fireEvent.click(screen.getByTitle('삭제'))
-      fireEvent.click(screen.getByText('취소'))
+      fireEvent.click(screen.getByTitle('취소'))
       expect(screen.queryByText('삭제할까요?')).not.toBeInTheDocument()
     })
   })
