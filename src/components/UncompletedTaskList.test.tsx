@@ -17,9 +17,8 @@ const createMockTask = (overrides?: Partial<Task>): Task => ({
 describe('UncompletedTaskList', () => {
   const defaultProps = {
     tasks: [],
-    onIncludeToday: vi.fn(),
-    onCancel: vi.fn(),
-    onPostpone: vi.fn(),
+    selectedIds: new Set<string>(),
+    onToggle: vi.fn(),
   }
 
   describe('기본 렌더링', () => {
@@ -37,49 +36,49 @@ describe('UncompletedTaskList', () => {
       render(<UncompletedTaskList {...defaultProps} tasks={[]} />)
       expect(screen.getByText('미완료 과업이 없습니다')).toBeInTheDocument()
     })
+
+    it('안내 문구가 표시되어야 한다', () => {
+      const tasks = [createMockTask()]
+      render(<UncompletedTaskList {...defaultProps} tasks={tasks} />)
+      expect(
+        screen.getByText('오늘 이어서 진행할 과업을 선택하세요')
+      ).toBeInTheDocument()
+    })
   })
 
-  describe('액션 전달', () => {
-    it('오늘 포함 액션이 전달되어야 한다', () => {
-      const onIncludeToday = vi.fn()
-      const tasks = [createMockTask()]
+  describe('선택 상태', () => {
+    it('선택된 과업이 표시되어야 한다', () => {
+      const tasks = [
+        createMockTask({ id: 'task-1', title: '과업 1' }),
+        createMockTask({ id: 'task-2', title: '과업 2' }),
+      ]
+      const selectedIds = new Set(['task-1'])
       render(
         <UncompletedTaskList
           {...defaultProps}
           tasks={tasks}
-          onIncludeToday={onIncludeToday}
+          selectedIds={selectedIds}
         />
       )
-      fireEvent.click(screen.getByText('오늘 포함'))
-      expect(onIncludeToday).toHaveBeenCalledWith('task-1')
+      const checkboxes = screen.getAllByRole('checkbox')
+      expect(checkboxes[0]).toHaveAttribute('aria-checked', 'true')
+      expect(checkboxes[1]).toHaveAttribute('aria-checked', 'false')
     })
+  })
 
-    it('취소 액션이 전달되어야 한다', () => {
-      const onCancel = vi.fn()
-      const tasks = [createMockTask()]
+  describe('토글 동작', () => {
+    it('과업 클릭 시 onToggle이 호출되어야 한다', () => {
+      const onToggle = vi.fn()
+      const tasks = [createMockTask({ id: 'task-1', title: '과업 1' })]
       render(
         <UncompletedTaskList
           {...defaultProps}
           tasks={tasks}
-          onCancel={onCancel}
+          onToggle={onToggle}
         />
       )
-      fireEvent.click(screen.getByText('취소'))
-      expect(onCancel).toHaveBeenCalledWith('task-1')
-    })
-
-    it('내일로 액션이 전달되어야 한다', () => {
-      const onPostpone = vi.fn()
-      const tasks = [createMockTask()]
-      render(
-        <UncompletedTaskList
-          {...defaultProps}
-          tasks={tasks}
-          onPostpone={onPostpone}
-        />
-      )
-      fireEvent.click(screen.getByText('내일로'))
-      expect(onPostpone).toHaveBeenCalledWith('task-1')
+      fireEvent.click(screen.getByRole('checkbox'))
+      expect(onToggle).toHaveBeenCalledWith('task-1')
     })
   })
 })

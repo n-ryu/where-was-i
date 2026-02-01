@@ -15,12 +15,6 @@ function getTodayString(): string {
   return today.toISOString().split('T')[0]
 }
 
-function getTomorrowString(): string {
-  const tomorrow = new Date()
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  return tomorrow.toISOString().split('T')[0]
-}
-
 function getYesterdayString(): string {
   const yesterday = new Date()
   yesterday.setDate(yesterday.getDate() - 1)
@@ -37,24 +31,62 @@ describe('PlanPage', () => {
     await db.tasks.clear()
   })
 
-  describe('StepIndicator', () => {
-    it('3단계 진행 표시기가 표시되어야 한다', async () => {
+  describe('엔트리 단계', () => {
+    it('인사 메시지와 시작하기 버튼이 표시되어야 한다', async () => {
       render(<PlanPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('미완료 처리')).toBeInTheDocument()
-        expect(screen.getByText('과업 생성')).toBeInTheDocument()
-        expect(screen.getByText('계획 확정')).toBeInTheDocument()
+        expect(screen.getByText('시작하기')).toBeInTheDocument()
+      })
+      expect(
+        screen.getByText('오늘 하루도 화이팅! 계획을 세워볼까요?')
+      ).toBeInTheDocument()
+    })
+
+    it('시작하기 버튼 클릭 시 다음 단계로 이동해야 한다', async () => {
+      render(<PlanPage />)
+
+      await waitFor(() => {
+        expect(screen.getByText('시작하기')).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByText('시작하기'))
+
+      await waitFor(() => {
+        expect(screen.getByText('오늘의 계획')).toBeInTheDocument()
       })
     })
   })
 
-  describe('Step 1: 미완료 과업 처리', () => {
+  describe('StepIndicator', () => {
+    it('시작 후 2단계 진행 표시기가 표시되어야 한다', async () => {
+      render(<PlanPage />)
+
+      await waitFor(() => {
+        expect(screen.getByText('시작하기')).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByText('시작하기'))
+
+      await waitFor(() => {
+        expect(screen.getByText('미완료 선택')).toBeInTheDocument()
+        expect(screen.getByText('과업 추가')).toBeInTheDocument()
+      })
+    })
+  })
+
+  describe('Step 1: 미완료 과업 선택', () => {
     it('어제 이전의 미완료 과업이 표시되어야 한다', async () => {
       const yesterday = getYesterdayString()
       await taskRepository.createTask({ title: '어제 과업', date: yesterday })
 
       render(<PlanPage />)
+
+      await waitFor(() => {
+        expect(screen.getByText('시작하기')).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByText('시작하기'))
 
       await waitFor(() => {
         expect(screen.getByText('어제 과업')).toBeInTheDocument()
@@ -65,11 +97,43 @@ describe('PlanPage', () => {
       render(<PlanPage />)
 
       await waitFor(() => {
-        expect(screen.getByPlaceholderText('새 과업 입력')).toBeInTheDocument()
+        expect(screen.getByText('시작하기')).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByText('시작하기'))
+
+      await waitFor(() => {
+        expect(screen.getByText('오늘 과업 추가')).toBeInTheDocument()
       })
     })
 
-    it('"오늘 포함" 클릭 시 과업 날짜가 오늘로 변경되어야 한다', async () => {
+    it('과업 클릭 시 선택 상태가 토글되어야 한다', async () => {
+      const yesterday = getYesterdayString()
+      await taskRepository.createTask({ title: '어제 과업', date: yesterday })
+
+      render(<PlanPage />)
+
+      await waitFor(() => {
+        expect(screen.getByText('시작하기')).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByText('시작하기'))
+
+      await waitFor(() => {
+        expect(screen.getByText('어제 과업')).toBeInTheDocument()
+      })
+
+      const checkbox = screen.getByRole('checkbox')
+      expect(checkbox).toHaveAttribute('aria-checked', 'false')
+
+      fireEvent.click(checkbox)
+      expect(checkbox).toHaveAttribute('aria-checked', 'true')
+
+      fireEvent.click(checkbox)
+      expect(checkbox).toHaveAttribute('aria-checked', 'false')
+    })
+
+    it('진행하기 클릭 시 선택된 과업이 오늘로 이동해야 한다', async () => {
       const yesterday = getYesterdayString()
       const task = await taskRepository.createTask({
         title: '어제 과업',
@@ -79,83 +143,42 @@ describe('PlanPage', () => {
       render(<PlanPage />)
 
       await waitFor(() => {
+        expect(screen.getByText('시작하기')).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByText('시작하기'))
+
+      await waitFor(() => {
         expect(screen.getByText('어제 과업')).toBeInTheDocument()
       })
 
-      fireEvent.click(screen.getByText('오늘 포함'))
+      // 과업 선택
+      fireEvent.click(screen.getByRole('checkbox'))
+
+      // 진행하기 클릭
+      fireEvent.click(screen.getByText('진행하기'))
 
       await waitFor(async () => {
         const updatedTask = await taskRepository.getTask(task.id)
         expect(updatedTask?.date).toBe(getTodayString())
       })
     })
-
-    it('"취소" 클릭 시 과업이 cancelled 상태가 되어야 한다', async () => {
-      const yesterday = getYesterdayString()
-      const task = await taskRepository.createTask({
-        title: '취소할 과업',
-        date: yesterday,
-      })
-
-      render(<PlanPage />)
-
-      await waitFor(() => {
-        expect(screen.getByText('취소할 과업')).toBeInTheDocument()
-      })
-
-      fireEvent.click(screen.getByText('취소'))
-
-      await waitFor(async () => {
-        const updatedTask = await taskRepository.getTask(task.id)
-        expect(updatedTask?.status).toBe('cancelled')
-      })
-    })
-
-    it('"내일로" 클릭 시 과업 날짜가 내일로 변경되어야 한다', async () => {
-      const yesterday = getYesterdayString()
-      const task = await taskRepository.createTask({
-        title: '미룰 과업',
-        date: yesterday,
-      })
-
-      render(<PlanPage />)
-
-      await waitFor(() => {
-        expect(screen.getByText('미룰 과업')).toBeInTheDocument()
-      })
-
-      fireEvent.click(screen.getByText('내일로'))
-
-      await waitFor(async () => {
-        const updatedTask = await taskRepository.getTask(task.id)
-        expect(updatedTask?.date).toBe(getTomorrowString())
-      })
-    })
-
-    it('모든 미완료 과업 처리 후 Step 2로 이동해야 한다', async () => {
-      const yesterday = getYesterdayString()
-      await taskRepository.createTask({ title: '유일한 과업', date: yesterday })
-
-      render(<PlanPage />)
-
-      await waitFor(() => {
-        expect(screen.getByText('유일한 과업')).toBeInTheDocument()
-      })
-
-      fireEvent.click(screen.getByText('취소'))
-
-      await waitFor(() => {
-        expect(screen.getByPlaceholderText('새 과업 입력')).toBeInTheDocument()
-      })
-    })
   })
 
-  describe('Step 2: 오늘 과업 생성', () => {
-    it('과업 생성 폼이 표시되어야 한다', async () => {
+  describe('Step 2: 오늘 과업 추가', () => {
+    it('과업 입력 인풋이 표시되어야 한다', async () => {
       render(<PlanPage />)
 
       await waitFor(() => {
-        expect(screen.getByPlaceholderText('새 과업 입력')).toBeInTheDocument()
+        expect(screen.getByText('시작하기')).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByText('시작하기'))
+
+      await waitFor(() => {
+        expect(
+          screen.getByPlaceholderText('새 과업을 입력하세요')
+        ).toBeInTheDocument()
       })
     })
 
@@ -163,10 +186,18 @@ describe('PlanPage', () => {
       render(<PlanPage />)
 
       await waitFor(() => {
-        expect(screen.getByPlaceholderText('새 과업 입력')).toBeInTheDocument()
+        expect(screen.getByText('시작하기')).toBeInTheDocument()
       })
 
-      fireEvent.change(screen.getByPlaceholderText('새 과업 입력'), {
+      fireEvent.click(screen.getByText('시작하기'))
+
+      await waitFor(() => {
+        expect(
+          screen.getByPlaceholderText('새 과업을 입력하세요')
+        ).toBeInTheDocument()
+      })
+
+      fireEvent.change(screen.getByPlaceholderText('새 과업을 입력하세요'), {
         target: { value: '새 과업' },
       })
       fireEvent.click(screen.getByRole('button', { name: '추가' }))
@@ -176,57 +207,20 @@ describe('PlanPage', () => {
       })
     })
 
-    it('"다음" 버튼 클릭 시 Step 3으로 이동해야 한다', async () => {
+    it('완료 버튼 클릭 시 메인 화면으로 이동해야 한다', async () => {
       render(<PlanPage />)
 
       await waitFor(() => {
-        expect(screen.getByPlaceholderText('새 과업 입력')).toBeInTheDocument()
+        expect(screen.getByText('시작하기')).toBeInTheDocument()
       })
 
-      fireEvent.click(screen.getByText('다음'))
+      fireEvent.click(screen.getByText('시작하기'))
 
       await waitFor(() => {
-        expect(screen.getByText('확정')).toBeInTheDocument()
-      })
-    })
-  })
-
-  describe('Step 3: 계획 확정', () => {
-    it('오늘 과업 목록이 표시되어야 한다', async () => {
-      const today = getTodayString()
-      await taskRepository.createTask({ title: '오늘 과업', date: today })
-
-      render(<PlanPage />)
-
-      // Step 2로 이동
-      await waitFor(() => {
-        expect(screen.getByPlaceholderText('새 과업 입력')).toBeInTheDocument()
+        expect(screen.getByText('완료')).toBeInTheDocument()
       })
 
-      // Step 3로 이동
-      fireEvent.click(screen.getByText('다음'))
-
-      await waitFor(() => {
-        expect(screen.getByText('오늘 과업')).toBeInTheDocument()
-      })
-    })
-
-    it('"확정" 버튼 클릭 시 메인 화면으로 이동해야 한다', async () => {
-      render(<PlanPage />)
-
-      // Step 2로 이동
-      await waitFor(() => {
-        expect(screen.getByPlaceholderText('새 과업 입력')).toBeInTheDocument()
-      })
-
-      // Step 3로 이동
-      fireEvent.click(screen.getByText('다음'))
-
-      await waitFor(() => {
-        expect(screen.getByText('확정')).toBeInTheDocument()
-      })
-
-      fireEvent.click(screen.getByText('확정'))
+      fireEvent.click(screen.getByText('완료'))
 
       expect(mockNavigate).toHaveBeenCalledWith({ to: '/' })
     })

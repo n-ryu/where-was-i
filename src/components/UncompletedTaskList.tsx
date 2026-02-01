@@ -4,9 +4,8 @@ import type { Task } from '../types'
 
 export interface UncompletedTaskListProps {
   tasks: Task[]
-  onIncludeToday: (taskId: string) => void
-  onCancel: (taskId: string) => void
-  onPostpone: (taskId: string) => void
+  selectedIds: Set<string>
+  onToggle: (taskId: string) => void
 }
 
 const List = styled.ul`
@@ -21,27 +20,35 @@ const EmptyMessage = styled.div`
   padding: 24px;
 `
 
+const HelpText = styled.p`
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 16px;
+  text-align: center;
+`
+
 export function UncompletedTaskList({
   tasks,
-  onIncludeToday,
-  onCancel,
-  onPostpone,
+  selectedIds,
+  onToggle,
 }: UncompletedTaskListProps) {
   if (tasks.length === 0) {
     return <EmptyMessage>미완료 과업이 없습니다</EmptyMessage>
   }
 
   return (
-    <List>
-      {tasks.map((task) => (
-        <UncompletedTaskItem
-          key={task.id}
-          task={task}
-          onIncludeToday={onIncludeToday}
-          onCancel={onCancel}
-          onPostpone={onPostpone}
-        />
-      ))}
-    </List>
+    <>
+      <HelpText>오늘 이어서 진행할 과업을 선택하세요</HelpText>
+      <List>
+        {tasks.map((task) => (
+          <UncompletedTaskItem
+            key={task.id}
+            task={task}
+            isSelected={selectedIds.has(task.id)}
+            onToggle={onToggle}
+          />
+        ))}
+      </List>
+    </>
   )
 }

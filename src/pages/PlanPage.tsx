@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useNavigate } from '@tanstack/react-router'
 import styled from 'styled-components'
 import { TaskList, type TaskStatusChange } from '../components/TaskList'
-import { TaskForm } from '../components/TaskForm'
+import { FloatingInput } from '../components/FloatingInput'
 import { UncompletedTaskList } from '../components/UncompletedTaskList'
 import { StepIndicator } from '../components/StepIndicator'
 import {
@@ -17,6 +17,7 @@ import {
 
 const Container = styled.div`
   padding: 16px;
+  padding-bottom: 100px; /* FloatingInput 공간 */
   max-width: 600px;
   margin: 0 auto;
 `
@@ -59,12 +60,33 @@ const PrimaryButton = styled(Button)`
   }
 `
 
-type PlanStep = 'uncompleted' | 'create' | 'confirm'
+const EntryContainer = styled.div`
+  text-align: center;
+  padding: 48px 16px;
+`
+
+const Greeting = styled.h2`
+  font-size: 24px;
+  margin-bottom: 16px;
+  color: #333;
+`
+
+const EntryMessage = styled.p`
+  color: #666;
+  margin-bottom: 32px;
+  font-size: 16px;
+`
+
+const StartButton = styled(PrimaryButton)`
+  padding: 16px 48px;
+  font-size: 18px;
+`
+
+type PlanStep = 'entry' | 'uncompleted' | 'create'
 
 const STEPS = [
-  { key: 'uncompleted', label: '미완료 처리' },
-  { key: 'create', label: '과업 생성' },
-  { key: 'confirm', label: '계획 확정' },
+  { key: 'uncompleted', label: '미완료 선택' },
+  { key: 'create', label: '과업 추가' },
 ]
 
 function getTodayDate(): string {
@@ -72,16 +94,18 @@ function getTodayDate(): string {
   return today.toISOString().split('T')[0]
 }
 
-function getTomorrowDate(): string {
-  const tomorrow = new Date()
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  return tomorrow.toISOString().split('T')[0]
+function getGreeting(): string {
+  const hour = new Date().getHours()
+  if (hour < 12) return '좋은 아침이에요!'
+  if (hour < 18) return '좋은 오후예요!'
+  return '좋은 저녁이에요!'
 }
 
 export function PlanPage() {
   const navigate = useNavigate()
   const today = getTodayDate()
-  const [userStep, setUserStep] = useState<PlanStep>('uncompleted')
+  const [userStep, setUserStep] = useState<PlanStep>('entry')
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set())
 
   const uncompletedTasks = useLiveQuery(
     () => getUncompletedTasksBefore(today),
@@ -89,48 +113,71 @@ export function PlanPage() {
   )
   const todayTasks = useLiveQuery(() => getTasksByDate(today), [today])
 
-  // 미완료 과업이 없으면 자동으로 Step 2로 표시
-  const { currentStep, completedSteps } = useMemo(() => {
+  // 현재 단계 계산
+  const { currentStep, completedSteps, showStepIndicator } = useMemo(() => {
+    // 엔트리 단계에서는 StepIndicator를 숨김
+    if (userStep === 'entry') {
+      return {
+        currentStep: 'entry' as PlanStep,
+        completedSteps: [] as string[],
+        showStepIndicator: false,
+      }
+    }
+
     const hasUncompletedTasks =
       uncompletedTasks !== undefined && uncompletedTasks.length > 0
-    const skipUncompleted = userStep === 'uncompleted' && !hasUncompletedTasks
 
-    if (skipUncompleted) {
+    // 미완료 과업이 없으면 자동으로 create 단계로
+    if (userStep === 'uncompleted' && !hasUncompletedTasks) {
       return {
         currentStep: 'create' as PlanStep,
         completedSteps: ['uncompleted'],
+        showStepIndicator: true,
       }
     }
+
     if (userStep === 'create') {
       return {
         currentStep: 'create' as PlanStep,
         completedSteps: ['uncompleted'],
+        showStepIndicator: true,
       }
     }
-    if (userStep === 'confirm') {
-      return {
-        currentStep: 'confirm' as PlanStep,
-        completedSteps: ['uncompleted', 'create'],
-      }
+
+    return {
+      currentStep: userStep,
+      completedSteps: [] as string[],
+      showStepIndicator: true,
     }
-    return { currentStep: userStep, completedSteps: [] as string[] }
   }, [userStep, uncompletedTasks])
 
-  const handleIncludeToday = async (taskId: string) => {
-    await updateTask(taskId, { date: today })
+  const handleStart = () => {
+    setUserStep('uncompleted')
   }
 
-  const handleCancel = async (taskId: string) => {
-    await updateTask(taskId, { status: 'cancelled' })
+  const handleToggleTask = (taskId: string) => {
+    setSelectedTaskIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(taskId)) {
+        next.delete(taskId)
+      } else {
+        next.add(taskId)
+      }
+      return next
+    })
   }
 
-  const handlePostpone = async (taskId: string) => {
-    await updateTask(taskId, { date: getTomorrowDate() })
+  const handleProceed = async () => {
+    // 선택된 과업들을 오늘 날짜로 변경
+    for (const taskId of selectedTaskIds) {
+      await updateTask(taskId, { date: today })
+    }
+    setUserStep('create')
   }
 
-  const handleCreate = async (input: { title: string }) => {
+  const handleCreateTask = async (title: string) => {
     await createTask({
-      title: input.title,
+      title,
       date: today,
     })
   }
@@ -147,35 +194,44 @@ export function PlanPage() {
     await deleteTask(id)
   }
 
-  const handleNext = () => {
-    if (currentStep === 'create') {
-      setUserStep('confirm')
-    }
-  }
-
-  const handleConfirm = () => {
+  const handleComplete = () => {
     navigate({ to: '/' })
   }
 
   const getStepTitle = () => {
     switch (currentStep) {
       case 'uncompleted':
-        return '미완료 과업 처리'
+        return '미완료 과업 선택'
       case 'create':
-        return '오늘 과업 생성'
-      case 'confirm':
-        return '계획 확정'
+        return '오늘 과업 추가'
+      default:
+        return ''
     }
+  }
+
+  // 엔트리 단계
+  if (currentStep === 'entry') {
+    return (
+      <Container>
+        <EntryContainer>
+          <Greeting>{getGreeting()}</Greeting>
+          <EntryMessage>오늘 하루도 화이팅! 계획을 세워볼까요?</EntryMessage>
+          <StartButton onClick={handleStart}>시작하기</StartButton>
+        </EntryContainer>
+      </Container>
+    )
   }
 
   return (
     <Container>
       <Header>오늘의 계획</Header>
-      <StepIndicator
-        steps={STEPS}
-        currentStep={currentStep}
-        completedSteps={completedSteps}
-      />
+      {showStepIndicator && (
+        <StepIndicator
+          steps={STEPS}
+          currentStep={currentStep}
+          completedSteps={completedSteps}
+        />
+      )}
 
       <SectionTitle>{getStepTitle()}</SectionTitle>
 
@@ -183,19 +239,18 @@ export function PlanPage() {
         <Section>
           <UncompletedTaskList
             tasks={uncompletedTasks || []}
-            onIncludeToday={handleIncludeToday}
-            onCancel={handleCancel}
-            onPostpone={handlePostpone}
+            selectedIds={selectedTaskIds}
+            onToggle={handleToggleTask}
           />
+          <ButtonContainer>
+            <PrimaryButton onClick={handleProceed}>진행하기</PrimaryButton>
+          </ButtonContainer>
         </Section>
       )}
 
       {currentStep === 'create' && (
         <>
           <Section>
-            <TaskForm onCreate={handleCreate} />
-          </Section>
-          <Section>
             <TaskList
               tasks={todayTasks || []}
               onBatchStatusChange={handleBatchStatusChange}
@@ -204,24 +259,12 @@ export function PlanPage() {
             />
           </Section>
           <ButtonContainer>
-            <PrimaryButton onClick={handleNext}>다음</PrimaryButton>
+            <PrimaryButton onClick={handleComplete}>완료</PrimaryButton>
           </ButtonContainer>
-        </>
-      )}
-
-      {currentStep === 'confirm' && (
-        <>
-          <Section>
-            <TaskList
-              tasks={todayTasks || []}
-              onBatchStatusChange={handleBatchStatusChange}
-              onUpdate={handleUpdate}
-              onDelete={handleDelete}
-            />
-          </Section>
-          <ButtonContainer>
-            <PrimaryButton onClick={handleConfirm}>확정</PrimaryButton>
-          </ButtonContainer>
+          <FloatingInput
+            placeholder="새 과업을 입력하세요"
+            onSubmit={handleCreateTask}
+          />
         </>
       )}
     </Container>

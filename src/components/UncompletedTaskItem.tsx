@@ -1,93 +1,100 @@
+import type { KeyboardEvent } from 'react'
 import styled from 'styled-components'
 import type { Task } from '../types'
 
 export interface UncompletedTaskItemProps {
   task: Task
-  onIncludeToday: (taskId: string) => void
-  onCancel: (taskId: string) => void
-  onPostpone: (taskId: string) => void
+  isSelected: boolean
+  onToggle: (taskId: string) => void
 }
 
-const ListItem = styled.li`
+const ListItem = styled.li<{ $selected: boolean }>`
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  border-bottom: 1px solid #eee;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 2px solid ${(props) => (props.$selected ? '#1976d2' : '#e0e0e0')};
+  border-radius: 8px;
+  background: ${(props) => (props.$selected ? '#e3f2fd' : '#fff')};
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 8px;
+
+  &:hover {
+    border-color: #1976d2;
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+`
+
+const Checkbox = styled.div<{ $checked: boolean }>`
+  width: 24px;
+  height: 24px;
+  border: 2px solid ${(props) => (props.$checked ? '#1976d2' : '#bdbdbd')};
+  border-radius: 4px;
+  background: ${(props) => (props.$checked ? '#1976d2' : '#fff')};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  &::after {
+    content: '${(props) => (props.$checked ? '✓' : '')}';
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+  }
 `
 
 const TaskInfo = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`
-
-const Title = styled.span`
-  font-weight: 500;
   flex: 1;
+  min-width: 0;
 `
 
-const DateTag = styled.span`
+const Title = styled.div`
+  font-weight: 500;
+  margin-bottom: 4px;
+  word-break: break-word;
+`
+
+const DateTag = styled.div`
   font-size: 12px;
   color: #666;
 `
 
-const Actions = styled.div`
-  display: flex;
-  gap: 8px;
-`
-
-const Button = styled.button`
-  padding: 6px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: white;
-  cursor: pointer;
-  font-size: 13px;
-
-  &:hover {
-    background: #f5f5f5;
-  }
-`
-
-const IncludeButton = styled(Button)`
-  background: #1976d2;
-  color: white;
-  border-color: #1976d2;
-
-  &:hover {
-    background: #1565c0;
-  }
-`
-
-const CancelButton = styled(Button)`
-  color: #d32f2f;
-  border-color: #d32f2f;
-
-  &:hover {
-    background: #ffebee;
-  }
-`
-
 export function UncompletedTaskItem({
   task,
-  onIncludeToday,
-  onCancel,
-  onPostpone,
+  isSelected,
+  onToggle,
 }: UncompletedTaskItemProps) {
+  const handleClick = () => {
+    onToggle(task.id)
+  }
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLLIElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onToggle(task.id)
+    }
+  }
+
   return (
-    <ListItem>
+    <ListItem
+      $selected={isSelected}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="checkbox"
+      aria-checked={isSelected}
+      aria-label={`${task.title} - ${isSelected ? '선택됨' : '선택되지 않음'}`}
+    >
+      <Checkbox $checked={isSelected} />
       <TaskInfo>
         <Title>{task.title}</Title>
         <DateTag>{task.date}</DateTag>
       </TaskInfo>
-      <Actions>
-        <IncludeButton onClick={() => onIncludeToday(task.id)}>
-          오늘 포함
-        </IncludeButton>
-        <CancelButton onClick={() => onCancel(task.id)}>취소</CancelButton>
-        <Button onClick={() => onPostpone(task.id)}>내일로</Button>
-      </Actions>
     </ListItem>
   )
 }
