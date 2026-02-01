@@ -5,11 +5,7 @@ import { db } from '../db/database'
 import * as taskRepository from '../db/taskRepository'
 
 function getTodayString(): string {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0')
-  const day = String(today.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+  return new Date().toISOString().split('T')[0]
 }
 
 describe('LogPage', () => {
@@ -32,10 +28,9 @@ describe('LogPage', () => {
   it('오늘 날짜가 표시되어야 한다', async () => {
     render(<LogPage />)
 
-    const today = new Date()
-    const year = today.getFullYear()
-    const month = today.getMonth() + 1
-    const day = today.getDate()
+    // UTC 기준 오늘 날짜
+    const todayStr = new Date().toISOString().split('T')[0]
+    const [year, month, day] = todayStr.split('-').map(Number)
 
     await waitFor(() => {
       expect(
