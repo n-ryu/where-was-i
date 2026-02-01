@@ -7,7 +7,9 @@ import {
   useRouterState,
 } from '@tanstack/react-router'
 import styled, { createGlobalStyle } from 'styled-components'
+import { useLiveQuery } from 'dexie-react-hooks'
 import { HomePage, PlanPage, LogPage, SettingsPage } from './pages'
+import { db } from './db/database'
 
 const MOBILE_WIDTH = 390 // iPhone 14 기준
 
@@ -87,20 +89,23 @@ const TabBar = styled.nav`
   z-index: 50;
 `
 
-const TabLink = styled(Link)<{ $active?: boolean }>`
+const TabLink = styled(Link)<{ $active?: boolean; $disabled?: boolean }>`
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  color: ${(props) => (props.$active ? '#1976d2' : '#666')};
+  color: ${(props) =>
+    props.$disabled ? '#ccc' : props.$active ? '#1976d2' : '#666'};
   font-size: 12px;
   gap: 4px;
   transition: color 0.2s;
+  pointer-events: ${(props) => (props.$disabled ? 'none' : 'auto')};
+  opacity: ${(props) => (props.$disabled ? 0.5 : 1)};
 
   &:hover {
-    color: #1976d2;
+    color: ${(props) => (props.$disabled ? '#ccc' : '#1976d2')};
   }
 `
 
@@ -120,6 +125,14 @@ function RootLayout() {
   const routerState = useRouterState()
   const currentPath = routerState.location.pathname
 
+  const today = new Date().toISOString().split('T')[0]
+  const todayTasks = useLiveQuery(
+    () => db.tasks.where('date').equals(today).toArray(),
+    [today]
+  )
+
+  const hasTodayTasks = todayTasks && todayTasks.length > 0
+
   return (
     <>
       <GlobalStyle />
@@ -130,11 +143,19 @@ function RootLayout() {
               <Outlet />
             </Main>
             <TabBar>
-              <TabLink to="/" $active={currentPath === '/'}>
+              <TabLink
+                to="/"
+                $active={currentPath === '/'}
+                $disabled={!hasTodayTasks}
+              >
                 <TabIcon>📋</TabIcon>
                 <TabLabel>과업</TabLabel>
               </TabLink>
-              <TabLink to="/plan" $active={currentPath === '/plan'}>
+              <TabLink
+                to="/plan"
+                $active={currentPath === '/plan'}
+                $disabled={hasTodayTasks}
+              >
                 <TabIcon>📝</TabIcon>
                 <TabLabel>계획</TabLabel>
               </TabLink>
