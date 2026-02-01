@@ -82,7 +82,7 @@ export function TaskForm({ goals, onCreate }: TaskFormProps) {
   }
 
   return (
-    <Form>
+    <Form data-testid="task-form">
       <Input
         type="text"
         placeholder="새 과업 입력"
