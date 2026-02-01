@@ -1,9 +1,8 @@
 import styled from 'styled-components'
-import type { Task, Goal } from '../types'
+import type { Task } from '../types'
 
 export interface UncompletedTaskItemProps {
   task: Task
-  goal?: Goal
   onIncludeToday: (taskId: string) => void
   onCancel: (taskId: string) => void
   onPostpone: (taskId: string) => void
@@ -26,14 +25,6 @@ const TaskInfo = styled.div`
 const Title = styled.span`
   font-weight: 500;
   flex: 1;
-`
-
-const GoalTag = styled.span`
-  font-size: 12px;
-  color: #1976d2;
-  background: #e3f2fd;
-  padding: 2px 6px;
-  border-radius: 4px;
 `
 
 const DateTag = styled.span`
@@ -80,7 +71,6 @@ const CancelButton = styled(Button)`
 
 export function UncompletedTaskItem({
   task,
-  goal,
   onIncludeToday,
   onCancel,
   onPostpone,
@@ -89,7 +79,6 @@ export function UncompletedTaskItem({
     <ListItem>
       <TaskInfo>
         <Title>{task.title}</Title>
-        {goal && <GoalTag>{goal.title}</GoalTag>}
         <DateTag>{task.date}</DateTag>
       </TaskInfo>
       <Actions>

@@ -1,10 +1,9 @@
 import styled from 'styled-components'
 import { UncompletedTaskItem } from './UncompletedTaskItem'
-import type { Task, Goal } from '../types'
+import type { Task } from '../types'
 
 export interface UncompletedTaskListProps {
   tasks: Task[]
-  goals: Goal[]
   onIncludeToday: (taskId: string) => void
   onCancel: (taskId: string) => void
   onPostpone: (taskId: string) => void
@@ -24,7 +23,6 @@ const EmptyMessage = styled.div`
 
 export function UncompletedTaskList({
   tasks,
-  goals,
   onIncludeToday,
   onCancel,
   onPostpone,
@@ -39,7 +37,6 @@ export function UncompletedTaskList({
         <UncompletedTaskItem
           key={task.id}
           task={task}
-          goal={goals.find((g) => g.id === task.goalId)}
           onIncludeToday={onIncludeToday}
           onCancel={onCancel}
           onPostpone={onPostpone}

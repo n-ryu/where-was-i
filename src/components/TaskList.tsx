@@ -1,5 +1,5 @@
 import styled from 'styled-components'
-import type { Task, Goal, TaskStatus, TaskEventType } from '../types'
+import type { Task, TaskStatus, TaskEventType } from '../types'
 import { TaskListItem } from './TaskListItem'
 
 export interface TaskStatusChange {
@@ -10,9 +10,8 @@ export interface TaskStatusChange {
 
 export interface TaskListProps {
   tasks: Task[]
-  goals: Goal[]
   onBatchStatusChange: (changes: TaskStatusChange[]) => void
-  onUpdate: (id: string, input: { title?: string; goalId?: string }) => void
+  onUpdate: (id: string, input: { title?: string }) => void
   onDelete: (id: string) => void
 }
 
@@ -56,7 +55,6 @@ function getCompletedTime(task: Task): number {
 
 export function TaskList({
   tasks,
-  goals,
   onBatchStatusChange,
   onUpdate,
   onDelete,
@@ -108,7 +106,6 @@ export function TaskList({
               <TaskListItem
                 key={task.id}
                 task={task}
-                goals={goals}
                 onStatusChange={handleStatusChange}
                 onUpdate={onUpdate}
                 onDelete={onDelete}
@@ -126,7 +123,6 @@ export function TaskList({
               <TaskListItem
                 key={task.id}
                 task={task}
-                goals={goals}
                 onStatusChange={handleStatusChange}
                 onUpdate={onUpdate}
                 onDelete={onDelete}
@@ -144,7 +140,6 @@ export function TaskList({
               <TaskListItem
                 key={task.id}
                 task={task}
-                goals={goals}
                 onStatusChange={handleStatusChange}
                 onUpdate={onUpdate}
                 onDelete={onDelete}

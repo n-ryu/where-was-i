@@ -7,7 +7,6 @@ import {
   deleteTask,
   getTasksByDate,
   getTasksByStatus,
-  getTasksByGoalId,
   updateTaskStatus,
   addTaskEvent,
   getUncompletedTasksBefore,
@@ -88,11 +87,7 @@ describe('TaskRepository', () => {
   describe('목록 조회', () => {
     beforeEach(async () => {
       await createTask({ title: '과업 1', date: '2025-01-15' })
-      await createTask({
-        title: '과업 2',
-        date: '2025-01-15',
-        goalId: 'goal-1',
-      })
+      await createTask({ title: '과업 2', date: '2025-01-15' })
       await createTask({ title: '과업 3', date: '2025-01-16' })
       const task4 = await createTask({ title: '과업 4', date: '2025-01-15' })
       await updateTaskStatus(task4.id, 'in_progress')
@@ -109,12 +104,6 @@ describe('TaskRepository', () => {
 
       const inProgressTasks = await getTasksByStatus('in_progress')
       expect(inProgressTasks).toHaveLength(1)
-    })
-
-    it('특정 Goal에 연결된 Task를 조회할 수 있다', async () => {
-      const tasks = await getTasksByGoalId('goal-1')
-      expect(tasks).toHaveLength(1)
-      expect(tasks[0].title).toBe('과업 2')
     })
   })
 

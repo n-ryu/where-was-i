@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { db } from './database'
-import type { Goal, Task } from '../types'
+import type { Task } from '../types'
 
 describe('Database', () => {
   beforeEach(async () => {
@@ -8,7 +8,6 @@ describe('Database', () => {
   })
 
   afterEach(async () => {
-    await db.goals.clear()
     await db.tasks.clear()
   })
 
@@ -17,62 +16,8 @@ describe('Database', () => {
       expect(db.name).toBe('where-was-i-db')
     })
 
-    it('goals 테이블이 존재한다', () => {
-      expect(db.goals).toBeDefined()
-    })
-
     it('tasks 테이블이 존재한다', () => {
       expect(db.tasks).toBeDefined()
-    })
-  })
-
-  describe('Goal 테이블', () => {
-    const sampleGoal: Goal = {
-      id: 'goal-1',
-      title: '운동 습관 만들기',
-      isActive: true,
-      createdAt: new Date('2025-01-01'),
-      updatedAt: new Date('2025-01-01'),
-    }
-
-    it('Goal을 추가할 수 있다', async () => {
-      const id = await db.goals.add(sampleGoal)
-      expect(id).toBe('goal-1')
-    })
-
-    it('Goal을 ID로 조회할 수 있다', async () => {
-      await db.goals.add(sampleGoal)
-      const goal = await db.goals.get('goal-1')
-      expect(goal).toMatchObject({
-        id: 'goal-1',
-        title: '운동 습관 만들기',
-        isActive: true,
-      })
-    })
-
-    it('모든 Goal을 조회할 수 있다', async () => {
-      await db.goals.add(sampleGoal)
-      await db.goals.add({
-        ...sampleGoal,
-        id: 'goal-2',
-        title: '독서 습관',
-      })
-      const goals = await db.goals.toArray()
-      expect(goals).toHaveLength(2)
-    })
-
-    it('Goal을 수정할 수 있다', async () => {
-      await db.goals.add(sampleGoal)
-      await db.goals.update('goal-1', { title: '수정된 제목' })
-      const goal = await db.goals.get('goal-1')
-      expect(goal?.title).toBe('수정된 제목')
-    })
-
-    it('Goal을 삭제할 수 있다', async () => {
-      await db.goals.add(sampleGoal)
-      await db.goals.delete('goal-1')
-      const goal = await db.goals.get('goal-1')
-      expect(goal).toBeUndefined()
     })
   })
 
@@ -81,7 +26,6 @@ describe('Database', () => {
       id: 'task-1',
       title: '아침 조깅하기',
       status: 'pending',
-      goalId: 'goal-1',
       date: '2025-01-15',
       events: [],
       createdAt: new Date('2025-01-15'),

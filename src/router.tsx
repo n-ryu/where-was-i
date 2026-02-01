@@ -5,13 +5,7 @@ import {
   Outlet,
   Link,
 } from '@tanstack/react-router'
-import {
-  HomePage,
-  PlanPage,
-  ReviewPage,
-  GoalsPage,
-  SettingsPage,
-} from './pages'
+import { HomePage, PlanPage, ReviewPage, SettingsPage } from './pages'
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -24,7 +18,6 @@ function RootLayout() {
         <Link to="/">메인</Link>
         <Link to="/plan">계획</Link>
         <Link to="/review">회고</Link>
-        <Link to="/goals">Goal</Link>
         <Link to="/settings">설정</Link>
       </nav>
       <main>
@@ -52,12 +45,6 @@ const reviewRoute = createRoute({
   component: ReviewPage,
 })
 
-const goalsRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/goals',
-  component: GoalsPage,
-})
-
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/settings',
@@ -68,7 +55,6 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   planRoute,
   reviewRoute,
-  goalsRoute,
   settingsRoute,
 ])
 

@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { TaskListItem } from './TaskListItem'
-import type { Task, Goal } from '../types'
+import type { Task } from '../types'
 
 const createMockTask = (overrides?: Partial<Task>): Task => ({
   id: 'task-1',
@@ -14,19 +14,9 @@ const createMockTask = (overrides?: Partial<Task>): Task => ({
   ...overrides,
 })
 
-const createMockGoal = (overrides?: Partial<Goal>): Goal => ({
-  id: 'goal-1',
-  title: '테스트 목표',
-  isActive: true,
-  createdAt: new Date('2024-01-01'),
-  updatedAt: new Date('2024-01-01'),
-  ...overrides,
-})
-
 describe('TaskListItem', () => {
   const defaultProps = {
     task: createMockTask(),
-    goals: [createMockGoal()],
     onStatusChange: vi.fn(),
     onUpdate: vi.fn(),
     onDelete: vi.fn(),
@@ -36,13 +26,6 @@ describe('TaskListItem', () => {
     it('Task 제목을 표시한다', () => {
       render(<TaskListItem {...defaultProps} />)
       expect(screen.getByText('테스트 과업')).toBeInTheDocument()
-    })
-
-    it('연결된 Goal 이름을 표시한다', () => {
-      const task = createMockTask({ goalId: 'goal-1' })
-      const goals = [createMockGoal({ id: 'goal-1', title: '연결된 목표' })]
-      render(<TaskListItem {...defaultProps} task={task} goals={goals} />)
-      expect(screen.getByText('연결된 목표')).toBeInTheDocument()
     })
   })
 
@@ -160,18 +143,6 @@ describe('TaskListItem', () => {
       expect(screen.getByDisplayValue('수정된 과업')).toBeInTheDocument()
     })
 
-    it('편집 모드에서 Goal을 변경할 수 있다', () => {
-      const goals = [
-        createMockGoal({ id: 'goal-1', title: '목표 1' }),
-        createMockGoal({ id: 'goal-2', title: '목표 2' }),
-      ]
-      render(<TaskListItem {...defaultProps} goals={goals} />)
-      fireEvent.click(screen.getByText('편집'))
-      const select = screen.getByRole('combobox')
-      fireEvent.change(select, { target: { value: 'goal-2' } })
-      expect(select).toHaveValue('goal-2')
-    })
-
     it('저장 버튼 클릭 시 변경 사항을 저장하고 편집 모드를 종료한다', () => {
       const onUpdate = vi.fn()
       render(<TaskListItem {...defaultProps} onUpdate={onUpdate} />)
@@ -181,7 +152,6 @@ describe('TaskListItem', () => {
       fireEvent.click(screen.getByText('저장'))
       expect(onUpdate).toHaveBeenCalledWith('task-1', {
         title: '수정된 과업',
-        goalId: undefined,
       })
       expect(screen.queryByDisplayValue('수정된 과업')).not.toBeInTheDocument()
     })

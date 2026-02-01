@@ -1,10 +1,8 @@
 import { useState, type KeyboardEvent } from 'react'
 import styled from 'styled-components'
-import type { Goal } from '../types'
 
 export interface TaskFormProps {
-  goals: Goal[]
-  onCreate: (input: { title: string; goalId?: string }) => void
+  onCreate: (input: { title: string }) => void
 }
 
 const Form = styled.div`
@@ -21,19 +19,6 @@ const Input = styled.input`
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
-
-  &:focus {
-    outline: none;
-    border-color: #1976d2;
-  }
-`
-
-const Select = styled.select`
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  min-width: 120px;
 
   &:focus {
     outline: none;
@@ -60,15 +45,13 @@ const Button = styled.button`
   }
 `
 
-export function TaskForm({ goals, onCreate }: TaskFormProps) {
+export function TaskForm({ onCreate }: TaskFormProps) {
   const [title, setTitle] = useState('')
-  const [goalId, setGoalId] = useState('')
 
   const handleSubmit = () => {
     if (!title.trim()) return
     onCreate({
       title: title.trim(),
-      goalId: goalId || undefined,
     })
     setTitle('')
   }
@@ -90,14 +73,6 @@ export function TaskForm({ goals, onCreate }: TaskFormProps) {
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={handleKeyDown}
       />
-      <Select value={goalId} onChange={(e) => setGoalId(e.target.value)}>
-        <option value="">목표 없음</option>
-        {goals.map((goal) => (
-          <option key={goal.id} value={goal.id}>
-            {goal.title}
-          </option>
-        ))}
-      </Select>
       <Button type="button" onClick={handleSubmit} disabled={!title.trim()}>
         추가
       </Button>

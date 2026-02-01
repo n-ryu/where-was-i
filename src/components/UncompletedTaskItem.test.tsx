@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { UncompletedTaskItem } from './UncompletedTaskItem'
-import type { Task, Goal } from '../types'
+import type { Task } from '../types'
 
 const createMockTask = (overrides?: Partial<Task>): Task => ({
   id: 'task-1',
@@ -9,15 +9,6 @@ const createMockTask = (overrides?: Partial<Task>): Task => ({
   status: 'pending',
   date: '2024-01-01',
   events: [],
-  createdAt: new Date('2024-01-01'),
-  updatedAt: new Date('2024-01-01'),
-  ...overrides,
-})
-
-const createMockGoal = (overrides?: Partial<Goal>): Goal => ({
-  id: 'goal-1',
-  title: '테스트 목표',
-  isActive: true,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
   ...overrides,
@@ -35,18 +26,6 @@ describe('UncompletedTaskItem', () => {
     it('과업 제목이 표시되어야 한다', () => {
       render(<UncompletedTaskItem {...defaultProps} />)
       expect(screen.getByText('미완료 과업')).toBeInTheDocument()
-    })
-
-    it('연결된 Goal이 있으면 표시되어야 한다', () => {
-      const task = createMockTask({ goalId: 'goal-1' })
-      const goal = createMockGoal({ id: 'goal-1', title: '연결된 목표' })
-      render(<UncompletedTaskItem {...defaultProps} task={task} goal={goal} />)
-      expect(screen.getByText('연결된 목표')).toBeInTheDocument()
-    })
-
-    it('연결된 Goal이 없으면 Goal 태그가 표시되지 않아야 한다', () => {
-      render(<UncompletedTaskItem {...defaultProps} />)
-      expect(screen.queryByText('테스트 목표')).not.toBeInTheDocument()
     })
 
     it('과업 날짜가 표시되어야 한다', () => {

@@ -14,7 +14,6 @@ import {
   deleteTask,
   batchUpdateTaskStatus,
 } from '../db/taskRepository'
-import { getActiveGoals } from '../db/goalRepository'
 
 const Container = styled.div`
   padding: 16px;
@@ -89,7 +88,6 @@ export function PlanPage() {
     [today]
   )
   const todayTasks = useLiveQuery(() => getTasksByDate(today), [today])
-  const goals = useLiveQuery(() => getActiveGoals(), [])
 
   // 미완료 과업이 없으면 자동으로 Step 2로 표시
   const { currentStep, completedSteps } = useMemo(() => {
@@ -130,11 +128,10 @@ export function PlanPage() {
     await updateTask(taskId, { date: getTomorrowDate() })
   }
 
-  const handleCreate = async (input: { title: string; goalId?: string }) => {
+  const handleCreate = async (input: { title: string }) => {
     await createTask({
       title: input.title,
       date: today,
-      goalId: input.goalId,
     })
   }
 
@@ -142,10 +139,7 @@ export function PlanPage() {
     await batchUpdateTaskStatus(changes)
   }
 
-  const handleUpdate = async (
-    id: string,
-    input: { title?: string; goalId?: string }
-  ) => {
+  const handleUpdate = async (id: string, input: { title?: string }) => {
     await updateTask(id, input)
   }
 
@@ -189,7 +183,6 @@ export function PlanPage() {
         <Section>
           <UncompletedTaskList
             tasks={uncompletedTasks || []}
-            goals={goals || []}
             onIncludeToday={handleIncludeToday}
             onCancel={handleCancel}
             onPostpone={handlePostpone}
@@ -200,12 +193,11 @@ export function PlanPage() {
       {currentStep === 'create' && (
         <>
           <Section>
-            <TaskForm goals={goals || []} onCreate={handleCreate} />
+            <TaskForm onCreate={handleCreate} />
           </Section>
           <Section>
             <TaskList
               tasks={todayTasks || []}
-              goals={goals || []}
               onBatchStatusChange={handleBatchStatusChange}
               onUpdate={handleUpdate}
               onDelete={handleDelete}
@@ -222,7 +214,6 @@ export function PlanPage() {
           <Section>
             <TaskList
               tasks={todayTasks || []}
-              goals={goals || []}
               onBatchStatusChange={handleBatchStatusChange}
               onUpdate={handleUpdate}
               onDelete={handleDelete}

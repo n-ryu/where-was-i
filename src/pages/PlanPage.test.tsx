@@ -3,7 +3,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { PlanPage } from './PlanPage'
 import { db } from '../db/database'
 import * as taskRepository from '../db/taskRepository'
-import * as goalRepository from '../db/goalRepository'
 
 // useNavigate mock
 const mockNavigate = vi.fn()
@@ -31,13 +30,11 @@ function getYesterdayString(): string {
 describe('PlanPage', () => {
   beforeEach(async () => {
     await db.tasks.clear()
-    await db.goals.clear()
     mockNavigate.mockClear()
   })
 
   afterEach(async () => {
     await db.tasks.clear()
-    await db.goals.clear()
   })
 
   describe('StepIndicator', () => {
@@ -232,19 +229,6 @@ describe('PlanPage', () => {
       fireEvent.click(screen.getByText('확정'))
 
       expect(mockNavigate).toHaveBeenCalledWith({ to: '/' })
-    })
-  })
-
-  describe('Goal 연동', () => {
-    it('Step 2에서 Goal 선택이 가능해야 한다', async () => {
-      await goalRepository.createGoal({ title: '테스트 목표' })
-
-      render(<PlanPage />)
-
-      await waitFor(() => {
-        const select = screen.getByRole('combobox')
-        expect(select).toContainHTML('테스트 목표')
-      })
     })
   })
 })

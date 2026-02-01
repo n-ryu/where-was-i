@@ -9,7 +9,6 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { HomePage } from './HomePage'
 import { db } from '../db/database'
 import * as taskRepository from '../db/taskRepository'
-import * as goalRepository from '../db/goalRepository'
 
 function getTodayString(): string {
   const today = new Date()
@@ -19,12 +18,10 @@ function getTodayString(): string {
 describe('HomePage', () => {
   beforeEach(async () => {
     await db.tasks.clear()
-    await db.goals.clear()
   })
 
   afterEach(async () => {
     await db.tasks.clear()
-    await db.goals.clear()
   })
 
   describe('화면 구조', () => {
@@ -60,24 +57,6 @@ describe('HomePage', () => {
         expect(screen.getByText('등록된 과업이 없습니다')).toBeInTheDocument()
       })
     })
-
-    it('활성화된 Goal 목록이 과업 생성 폼에 표시되어야 한다', async () => {
-      await goalRepository.createGoal({ title: '활성 목표' })
-      const inactiveGoal = await goalRepository.createGoal({
-        title: '비활성 목표',
-      })
-      await goalRepository.setGoalActive(inactiveGoal.id, false)
-
-      render(<HomePage />)
-
-      await waitFor(() => {
-        const select = screen.getByRole('combobox')
-        expect(within(select).getByText('활성 목표')).toBeInTheDocument()
-        expect(
-          within(select).queryByText('비활성 목표')
-        ).not.toBeInTheDocument()
-      })
-    })
   })
 
   describe('과업 생성', () => {
@@ -104,38 +83,6 @@ describe('HomePage', () => {
       expect(tasks).toHaveLength(1)
       expect(tasks[0].title).toBe('새로운 과업')
       expect(tasks[0].date).toBe(today)
-    })
-
-    it('Goal을 선택하고 과업을 추가하면 해당 Goal과 연결되어야 한다', async () => {
-      const goal = await goalRepository.createGoal({ title: '테스트 목표' })
-
-      render(<HomePage />)
-
-      await waitFor(() => {
-        expect(screen.getByPlaceholderText('새 과업 입력')).toBeInTheDocument()
-      })
-
-      const taskForm = screen.getByTestId('task-form')
-      const input = within(taskForm).getByPlaceholderText('새 과업 입력')
-      const select = within(taskForm).getByRole('combobox')
-      const button = within(taskForm).getByRole('button', { name: '추가' })
-
-      fireEvent.change(input, { target: { value: '목표 연결 과업' } })
-      fireEvent.change(select, { target: { value: goal.id } })
-      fireEvent.click(button)
-
-      await waitFor(() => {
-        expect(screen.getByText('목표 연결 과업')).toBeInTheDocument()
-      })
-      // Goal 태그는 TaskList에 표시됨
-      expect(screen.getAllByText('테스트 목표').length).toBeGreaterThanOrEqual(
-        1
-      )
-
-      // DB에서 확인
-      const today = getTodayString()
-      const tasks = await taskRepository.getTasksByDate(today)
-      expect(tasks[0].goalId).toBe(goal.id)
     })
   })
 
@@ -231,10 +178,9 @@ describe('HomePage', () => {
   })
 
   describe('과업 수정/삭제', () => {
-    it('과업 제목과 연결된 Goal을 수정할 수 있어야 한다', async () => {
+    it('과업 제목을 수정할 수 있어야 한다', async () => {
       const today = getTodayString()
       await taskRepository.createTask({ title: '원래 제목', date: today })
-      const goal = await goalRepository.createGoal({ title: '새 목표' })
 
       render(<HomePage />)
 
@@ -252,10 +198,6 @@ describe('HomePage', () => {
       const input = within(pendingSection).getByDisplayValue('원래 제목')
       fireEvent.change(input, { target: { value: '수정된 제목' } })
 
-      // Goal 선택 (TaskListItem 내부의 select)
-      const select = within(pendingSection).getByRole('combobox')
-      fireEvent.change(select, { target: { value: goal.id } })
-
       // 저장
       fireEvent.click(
         within(pendingSection).getByRole('button', { name: '저장' })
@@ -263,7 +205,6 @@ describe('HomePage', () => {
 
       await waitFor(() => {
         expect(screen.getByText('수정된 제목')).toBeInTheDocument()
-        expect(screen.getAllByText('새 목표').length).toBeGreaterThanOrEqual(1)
       })
     })
 

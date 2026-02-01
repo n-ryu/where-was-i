@@ -1,12 +1,3 @@
-/** Goal 상태 */
-export interface Goal {
-  id: string
-  title: string
-  isActive: boolean
-  createdAt: Date
-  updatedAt: Date
-}
-
 /** Task 상태 */
 export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled'
 
@@ -24,7 +15,6 @@ export interface Task {
   id: string
   title: string
   status: TaskStatus
-  goalId?: string
   date: string // YYYY-MM-DD 형식
   events: TaskEvent[]
   createdAt: Date

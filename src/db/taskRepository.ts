@@ -4,12 +4,10 @@ import type { Task, TaskStatus, TaskEventType, TaskEvent } from '../types'
 export interface CreateTaskInput {
   title: string
   date: string
-  goalId?: string
 }
 
 export interface UpdateTaskInput {
   title?: string
-  goalId?: string
   status?: TaskStatus
   date?: string
 }
@@ -24,7 +22,6 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
     id: generateId(),
     title: input.title,
     status: 'pending',
-    goalId: input.goalId,
     date: input.date,
     events: [],
     createdAt: now,
@@ -66,10 +63,6 @@ export async function getTasksByDate(date: string): Promise<Task[]> {
 
 export async function getTasksByStatus(status: TaskStatus): Promise<Task[]> {
   return db.tasks.where('status').equals(status).toArray()
-}
-
-export async function getTasksByGoalId(goalId: string): Promise<Task[]> {
-  return db.tasks.where('goalId').equals(goalId).toArray()
 }
 
 export async function updateTaskStatus(

@@ -1,16 +1,15 @@
 import { useState } from 'react'
 import styled from 'styled-components'
-import type { Task, Goal, TaskStatus, TaskEventType } from '../types'
+import type { Task, TaskStatus, TaskEventType } from '../types'
 
 export interface TaskListItemProps {
   task: Task
-  goals: Goal[]
   onStatusChange: (
     id: string,
     status: TaskStatus,
     eventType: TaskEventType
   ) => void
-  onUpdate: (id: string, input: { title?: string; goalId?: string }) => void
+  onUpdate: (id: string, input: { title?: string }) => void
   onDelete: (id: string) => void
 }
 
@@ -32,15 +31,6 @@ const Content = styled.div`
 
 const Title = styled.div`
   font-weight: 500;
-`
-
-const GoalTag = styled.span`
-  font-size: 12px;
-  color: #1976d2;
-  background: #e3f2fd;
-  padding: 2px 6px;
-  border-radius: 4px;
-  margin-left: 8px;
 `
 
 const Actions = styled.div`
@@ -68,14 +58,6 @@ const Input = styled.input`
   margin-bottom: 8px;
 `
 
-const Select = styled.select`
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  margin-bottom: 8px;
-`
-
 const EditForm = styled.div`
   flex: 1;
 `
@@ -93,7 +75,6 @@ const DeleteConfirm = styled.div`
 
 export function TaskListItem({
   task,
-  goals,
   onStatusChange,
   onUpdate,
   onDelete,
@@ -101,9 +82,6 @@ export function TaskListItem({
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [editTitle, setEditTitle] = useState(task.title)
-  const [editGoalId, setEditGoalId] = useState(task.goalId || '')
-
-  const linkedGoal = goals.find((g) => g.id === task.goalId)
 
   const handleCheckboxChange = () => {
     if (task.status === 'completed') {
@@ -122,14 +100,12 @@ export function TaskListItem({
   const handleSave = () => {
     onUpdate(task.id, {
       title: editTitle,
-      goalId: editGoalId || undefined,
     })
     setIsEditing(false)
   }
 
   const handleCancel = () => {
     setEditTitle(task.title)
-    setEditGoalId(task.goalId || '')
     setIsEditing(false)
   }
 
@@ -157,17 +133,6 @@ export function TaskListItem({
             onChange={(e) => setEditTitle(e.target.value)}
             placeholder="과업 제목"
           />
-          <Select
-            value={editGoalId}
-            onChange={(e) => setEditGoalId(e.target.value)}
-          >
-            <option value="">목표 없음</option>
-            {goals.map((goal) => (
-              <option key={goal.id} value={goal.id}>
-                {goal.title}
-              </option>
-            ))}
-          </Select>
           <Actions>
             <Button onClick={handleSave}>저장</Button>
             <Button onClick={handleCancel}>취소</Button>
@@ -185,10 +150,7 @@ export function TaskListItem({
         onChange={handleCheckboxChange}
       />
       <Content onClick={handleContentClick}>
-        <Title>
-          {task.title}
-          {linkedGoal && <GoalTag>{linkedGoal.title}</GoalTag>}
-        </Title>
+        <Title>{task.title}</Title>
       </Content>
       <Actions>
         {isDeleting ? (

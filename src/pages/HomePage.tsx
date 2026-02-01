@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import styled from 'styled-components'
-import type { Task, Goal } from '../types'
+import type { Task } from '../types'
 import { TaskForm } from '../components/TaskForm'
 import { TaskList, type TaskStatusChange } from '../components/TaskList'
 import * as taskRepository from '../db/taskRepository'
-import * as goalRepository from '../db/goalRepository'
 
 const Container = styled.div`
   max-width: 600px;
@@ -43,19 +42,14 @@ function formatDateKorean(dateString: string): string {
 
 export function HomePage() {
   const [tasks, setTasks] = useState<Task[]>([])
-  const [goals, setGoals] = useState<Goal[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   const today = getTodayString()
 
   const loadData = useCallback(async () => {
     try {
-      const [todayTasks, activeGoals] = await Promise.all([
-        taskRepository.getTasksByDate(today),
-        goalRepository.getActiveGoals(),
-      ])
+      const todayTasks = await taskRepository.getTasksByDate(today)
       setTasks(todayTasks)
-      setGoals(activeGoals)
     } finally {
       setIsLoading(false)
     }
@@ -65,11 +59,10 @@ export function HomePage() {
     loadData()
   }, [loadData])
 
-  const handleCreate = async (input: { title: string; goalId?: string }) => {
+  const handleCreate = async (input: { title: string }) => {
     await taskRepository.createTask({
       title: input.title,
       date: today,
-      goalId: input.goalId,
     })
     await loadData()
   }
@@ -79,10 +72,7 @@ export function HomePage() {
     await loadData()
   }
 
-  const handleUpdate = async (
-    id: string,
-    input: { title?: string; goalId?: string }
-  ) => {
+  const handleUpdate = async (id: string, input: { title?: string }) => {
     await taskRepository.updateTask(id, input)
     await loadData()
   }
@@ -107,12 +97,11 @@ export function HomePage() {
         <DateText>{formatDateKorean(today)}</DateText>
       </Header>
 
-      <TaskForm goals={goals} onCreate={handleCreate} />
+      <TaskForm onCreate={handleCreate} />
 
       <section style={{ marginTop: '24px' }}>
         <TaskList
           tasks={tasks}
-          goals={goals}
           onBatchStatusChange={handleBatchStatusChange}
           onUpdate={handleUpdate}
           onDelete={handleDelete}

@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, within } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { TaskList } from './TaskList'
-import type { Task, Goal } from '../types'
+import type { Task } from '../types'
 
 const createMockTask = (overrides?: Partial<Task>): Task => ({
   id: 'task-1',
@@ -14,22 +14,12 @@ const createMockTask = (overrides?: Partial<Task>): Task => ({
   ...overrides,
 })
 
-const createMockGoal = (overrides?: Partial<Goal>): Goal => ({
-  id: 'goal-1',
-  title: '테스트 목표',
-  isActive: true,
-  createdAt: new Date('2024-01-01'),
-  updatedAt: new Date('2024-01-01'),
-  ...overrides,
-})
-
 describe('TaskList', () => {
   const defaultProps = {
     tasks: [
       createMockTask({ id: 'task-1', title: '과업 1' }),
       createMockTask({ id: 'task-2', title: '과업 2' }),
     ],
-    goals: [createMockGoal()],
     onBatchStatusChange: vi.fn(),
     onUpdate: vi.fn(),
     onDelete: vi.fn(),
