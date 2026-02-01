@@ -130,10 +130,9 @@ describe('HomePage', () => {
       fireEvent.click(screen.getByText('대기중 과업'))
 
       await waitFor(() => {
-        const inProgressSection = screen.getByTestId('in-progress-section')
-        expect(
-          within(inProgressSection).getByText('대기중 과업')
-        ).toBeInTheDocument()
+        // data-status가 in_progress로 변경되어야 함
+        const listItem = screen.getByText('대기중 과업').closest('li')
+        expect(listItem).toHaveAttribute('data-status', 'in_progress')
       })
     })
 
@@ -149,19 +148,18 @@ describe('HomePage', () => {
       render(<HomePage />)
 
       await waitFor(() => {
-        expect(screen.getByTestId('in-progress-section')).toBeInTheDocument()
+        const listItem = screen.getByText('진행중 과업').closest('li')
+        expect(listItem).toHaveAttribute('data-status', 'in_progress')
       })
 
-      // 진행중 섹션에서 체크박스 클릭
-      const inProgressSection = screen.getByTestId('in-progress-section')
-      const checkbox = within(inProgressSection).getByRole('checkbox')
+      // 진행중 과업의 체크박스 클릭
+      const listItem = screen.getByText('진행중 과업').closest('li')!
+      const checkbox = within(listItem).getByRole('checkbox')
       fireEvent.click(checkbox)
 
       await waitFor(() => {
-        const completedSection = screen.getByTestId('completed-section')
-        expect(
-          within(completedSection).getByText('진행중 과업')
-        ).toBeInTheDocument()
+        const updatedListItem = screen.getByText('진행중 과업').closest('li')
+        expect(updatedListItem).toHaveAttribute('data-status', 'completed')
       })
     })
 
@@ -179,24 +177,20 @@ describe('HomePage', () => {
       render(<HomePage />)
 
       await waitFor(() => {
-        expect(screen.getByTestId('in-progress-section')).toBeInTheDocument()
+        const inProgressItem = screen.getByText('기존 진행중').closest('li')
+        expect(inProgressItem).toHaveAttribute('data-status', 'in_progress')
       })
 
       // 대기중 과업 클릭하여 진행중으로 전환
-      const pendingSection = screen.getByTestId('pending-section')
-      fireEvent.click(within(pendingSection).getByText('대기중 과업'))
+      fireEvent.click(screen.getByText('대기중 과업'))
 
       await waitFor(() => {
         // 새 과업이 진행중
-        const inProgressSection = screen.getByTestId('in-progress-section')
-        expect(
-          within(inProgressSection).getByText('대기중 과업')
-        ).toBeInTheDocument()
+        const newInProgressItem = screen.getByText('대기중 과업').closest('li')
+        expect(newInProgressItem).toHaveAttribute('data-status', 'in_progress')
         // 기존 과업은 대기중으로 이동
-        const newPendingSection = screen.getByTestId('pending-section')
-        expect(
-          within(newPendingSection).getByText('기존 진행중')
-        ).toBeInTheDocument()
+        const oldItem = screen.getByText('기존 진행중').closest('li')
+        expect(oldItem).toHaveAttribute('data-status', 'pending')
       })
 
       // DB에서 paused 이벤트 확인
@@ -217,20 +211,18 @@ describe('HomePage', () => {
         expect(screen.getByText('원래 제목')).toBeInTheDocument()
       })
 
-      // 편집 버튼 클릭
-      const pendingSection = screen.getByTestId('pending-section')
-      fireEvent.click(
-        within(pendingSection).getByRole('button', { name: '편집' })
-      )
+      // 해당 아이템 찾기
+      const listItem = screen.getByText('원래 제목').closest('li')!
 
-      // 제목 수정 (TaskListItem 내부)
-      const input = within(pendingSection).getByDisplayValue('원래 제목')
+      // 편집 버튼 클릭
+      fireEvent.click(within(listItem).getByRole('button', { name: '편집' }))
+
+      // 제목 수정
+      const input = within(listItem).getByDisplayValue('원래 제목')
       fireEvent.change(input, { target: { value: '수정된 제목' } })
 
       // 저장
-      fireEvent.click(
-        within(pendingSection).getByRole('button', { name: '저장' })
-      )
+      fireEvent.click(within(listItem).getByRole('button', { name: '저장' }))
 
       await waitFor(() => {
         expect(screen.getByText('수정된 제목')).toBeInTheDocument()

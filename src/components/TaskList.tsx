@@ -1,4 +1,5 @@
 import styled from 'styled-components'
+import { LayoutGroup } from 'framer-motion'
 import type { Task, TaskStatus, TaskEventType } from '../types'
 import { TaskListItem } from './TaskListItem'
 
@@ -14,25 +15,6 @@ export interface TaskListProps {
   onUpdate: (id: string, input: { title?: string }) => void
   onDelete: (id: string) => void
 }
-
-const Container = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-`
-
-const Section = styled.section<{ $highlighted?: boolean }>`
-  background: ${(props) => (props.$highlighted ? '#e3f2fd' : 'transparent')};
-  border-radius: 8px;
-  padding: ${(props) => (props.$highlighted ? '12px' : '0')};
-`
-
-const SectionTitle = styled.h3`
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 8px;
-  font-weight: 500;
-`
 
 const List = styled.ul`
   list-style: none;
@@ -53,6 +35,30 @@ function getCompletedTime(task: Task): number {
   return completedEvent ? completedEvent.timestamp.getTime() : 0
 }
 
+function sortTasks(tasks: Task[]): Task[] {
+  // 정렬 순서: 진행중 → 대기중 → 완료
+  const statusOrder: Record<TaskStatus, number> = {
+    in_progress: 0,
+    pending: 1,
+    completed: 2,
+    cancelled: 3,
+  }
+
+  return [...tasks].sort((a, b) => {
+    // 먼저 상태별 정렬
+    const statusDiff = statusOrder[a.status] - statusOrder[b.status]
+    if (statusDiff !== 0) return statusDiff
+
+    // 완료된 항목은 최근 완료순
+    if (a.status === 'completed') {
+      return getCompletedTime(b) - getCompletedTime(a)
+    }
+
+    // 그 외는 생성순
+    return a.createdAt.getTime() - b.createdAt.getTime()
+  })
+}
+
 export function TaskList({
   tasks,
   onBatchStatusChange,
@@ -60,10 +66,7 @@ export function TaskList({
   onDelete,
 }: TaskListProps) {
   const inProgressTasks = tasks.filter((t) => t.status === 'in_progress')
-  const pendingTasks = tasks.filter((t) => t.status === 'pending')
-  const completedTasks = tasks
-    .filter((t) => t.status === 'completed')
-    .sort((a, b) => getCompletedTime(b) - getCompletedTime(a))
+  const sortedTasks = sortTasks(tasks)
 
   const handleStatusChange = (
     taskId: string,
@@ -93,61 +96,18 @@ export function TaskList({
   }
 
   return (
-    <Container>
-      {inProgressTasks.length > 0 && (
-        <Section
-          $highlighted
-          data-testid="in-progress-section"
-          data-highlighted="true"
-        >
-          <SectionTitle>진행중</SectionTitle>
-          <List>
-            {inProgressTasks.map((task) => (
-              <TaskListItem
-                key={task.id}
-                task={task}
-                onStatusChange={handleStatusChange}
-                onUpdate={onUpdate}
-                onDelete={onDelete}
-              />
-            ))}
-          </List>
-        </Section>
-      )}
-
-      {pendingTasks.length > 0 && (
-        <Section data-testid="pending-section">
-          <SectionTitle>대기중</SectionTitle>
-          <List>
-            {pendingTasks.map((task) => (
-              <TaskListItem
-                key={task.id}
-                task={task}
-                onStatusChange={handleStatusChange}
-                onUpdate={onUpdate}
-                onDelete={onDelete}
-              />
-            ))}
-          </List>
-        </Section>
-      )}
-
-      {completedTasks.length > 0 && (
-        <Section data-testid="completed-section">
-          <SectionTitle>완료</SectionTitle>
-          <List>
-            {completedTasks.map((task) => (
-              <TaskListItem
-                key={task.id}
-                task={task}
-                onStatusChange={handleStatusChange}
-                onUpdate={onUpdate}
-                onDelete={onDelete}
-              />
-            ))}
-          </List>
-        </Section>
-      )}
-    </Container>
+    <LayoutGroup>
+      <List>
+        {sortedTasks.map((task) => (
+          <TaskListItem
+            key={task.id}
+            task={task}
+            onStatusChange={handleStatusChange}
+            onUpdate={onUpdate}
+            onDelete={onDelete}
+          />
+        ))}
+      </List>
+    </LayoutGroup>
   )
 }
