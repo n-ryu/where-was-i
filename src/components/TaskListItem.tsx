@@ -245,28 +245,28 @@ export function TaskListItem({
           <DeleteConfirm>
             <span>삭제할까요?</span>
             <IconButton onClick={handleDeleteConfirm} title="확인">
-              ✓
+              ✅
             </IconButton>
             <IconButton onClick={handleDeleteCancel} title="취소">
-              ✕
+              ❌
             </IconButton>
           </DeleteConfirm>
         ) : isEditing ? (
           <>
             <IconButton onClick={handleSave} title="저장">
-              ✓
+              ✅
             </IconButton>
             <IconButton onClick={handleCancel} title="취소">
-              ✕
+              ❌
             </IconButton>
           </>
         ) : (
           <>
             <IconButton onClick={() => setIsEditing(true)} title="편집">
-              ✎
+              ✏️
             </IconButton>
             <IconButton onClick={() => setIsDeleting(true)} title="삭제">
-              🗑
+              🗑️
             </IconButton>
           </>
         )}
