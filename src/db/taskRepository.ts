@@ -107,6 +107,17 @@ export interface TaskStatusChange {
   eventType: TaskEventType
 }
 
+/** 특정 날짜 이전의 미완료(pending, in_progress) Task 조회 */
+export async function getUncompletedTasksBefore(date: string): Promise<Task[]> {
+  return db.tasks
+    .where('date')
+    .below(date)
+    .filter(
+      (task) => task.status === 'pending' || task.status === 'in_progress'
+    )
+    .toArray()
+}
+
 /** 여러 Task의 상태를 하나의 트랜잭션으로 변경 */
 export async function batchUpdateTaskStatus(
   changes: TaskStatusChange[]
