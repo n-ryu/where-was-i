@@ -2,14 +2,16 @@ import styled from 'styled-components'
 import type { Task, Goal, TaskStatus, TaskEventType } from '../types'
 import { TaskListItem } from './TaskListItem'
 
+export interface TaskStatusChange {
+  id: string
+  status: TaskStatus
+  eventType: TaskEventType
+}
+
 export interface TaskListProps {
   tasks: Task[]
   goals: Goal[]
-  onStatusChange: (
-    id: string,
-    status: TaskStatus,
-    eventType: TaskEventType
-  ) => void
+  onBatchStatusChange: (changes: TaskStatusChange[]) => void
   onUpdate: (
     id: string,
     input: { title?: string; memo?: string; goalId?: string }
@@ -58,7 +60,7 @@ function getCompletedTime(task: Task): number {
 export function TaskList({
   tasks,
   goals,
-  onStatusChange,
+  onBatchStatusChange,
   onUpdate,
   onDelete,
 }: TaskListProps) {
@@ -73,13 +75,22 @@ export function TaskList({
     newStatus: TaskStatus,
     eventType: TaskEventType
   ) => {
+    const changes: TaskStatusChange[] = [
+      { id: taskId, status: newStatus, eventType },
+    ]
+
     // 대기중 Task가 진행중으로 전환되면 기존 진행중 Task를 대기중으로 변경
-    if (newStatus === 'in_progress' && inProgressTasks.length > 0) {
+    if (newStatus === 'in_progress') {
       for (const inProgressTask of inProgressTasks) {
-        onStatusChange(inProgressTask.id, 'pending', 'paused')
+        changes.push({
+          id: inProgressTask.id,
+          status: 'pending',
+          eventType: 'paused',
+        })
       }
     }
-    onStatusChange(taskId, newStatus, eventType)
+
+    onBatchStatusChange(changes)
   }
 
   if (tasks.length === 0) {

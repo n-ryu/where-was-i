@@ -105,3 +105,34 @@ export async function addTaskEvent(
   await db.tasks.put(updatedTask)
   return updatedTask
 }
+
+export interface TaskStatusChange {
+  id: string
+  status: TaskStatus
+  eventType: TaskEventType
+}
+
+/** 여러 Task의 상태를 하나의 트랜잭션으로 변경 */
+export async function batchUpdateTaskStatus(
+  changes: TaskStatusChange[]
+): Promise<void> {
+  await db.transaction('rw', db.tasks, async () => {
+    const now = new Date()
+    for (const change of changes) {
+      const task = await db.tasks.get(change.id)
+      if (!task) continue
+
+      const event: TaskEvent = {
+        eventType: change.eventType,
+        timestamp: now,
+      }
+
+      await db.tasks.put({
+        ...task,
+        status: change.status,
+        events: [...task.events, event],
+        updatedAt: now,
+      })
+    }
+  })
+}

@@ -32,7 +32,7 @@ describe('TaskList', () => {
       createMockTask({ id: 'task-2', title: '과업 2' }),
     ],
     goals: [createMockGoal()],
-    onStatusChange: vi.fn(),
+    onBatchStatusChange: vi.fn(),
     onUpdate: vi.fn(),
     onDelete: vi.fn(),
   }
@@ -146,7 +146,7 @@ describe('TaskList', () => {
 
   describe('상태 전환', () => {
     it('대기중 Task가 진행중으로 전환되면 기존 진행중 Task는 대기중으로 변경된다', () => {
-      const onStatusChange = vi.fn()
+      const onBatchStatusChange = vi.fn()
       const tasks = [
         createMockTask({
           id: 'task-1',
@@ -163,7 +163,7 @@ describe('TaskList', () => {
         <TaskList
           {...defaultProps}
           tasks={tasks}
-          onStatusChange={onStatusChange}
+          onBatchStatusChange={onBatchStatusChange}
         />
       )
 
@@ -171,14 +171,11 @@ describe('TaskList', () => {
       const pendingTask = within(pendingSection).getByText('대기중 과업')
       fireEvent.click(pendingTask)
 
-      // 기존 진행중 과업을 대기중으로 변경
-      expect(onStatusChange).toHaveBeenCalledWith('task-1', 'pending', 'paused')
-      // 새 과업을 진행중으로 변경
-      expect(onStatusChange).toHaveBeenCalledWith(
-        'task-2',
-        'in_progress',
-        'started'
-      )
+      // 배치로 상태 변경이 호출되어야 함
+      expect(onBatchStatusChange).toHaveBeenCalledWith([
+        { id: 'task-2', status: 'in_progress', eventType: 'started' },
+        { id: 'task-1', status: 'pending', eventType: 'paused' },
+      ])
     })
   })
 

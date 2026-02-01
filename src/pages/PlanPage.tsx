@@ -1,17 +1,15 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import styled from 'styled-components'
-import { TaskList } from '../components/TaskList'
+import { TaskList, type TaskStatusChange } from '../components/TaskList'
 import { TaskForm } from '../components/TaskForm'
 import {
   getTasksByDate,
   createTask,
   updateTask,
   deleteTask,
-  updateTaskStatus,
-  addTaskEvent,
+  batchUpdateTaskStatus,
 } from '../db/taskRepository'
 import { getActiveGoals } from '../db/goalRepository'
-import type { TaskStatus, TaskEventType } from '../types'
 
 const Container = styled.div`
   padding: 16px;
@@ -45,13 +43,8 @@ export function PlanPage() {
     })
   }
 
-  const handleStatusChange = async (
-    id: string,
-    status: TaskStatus,
-    eventType: TaskEventType
-  ) => {
-    await updateTaskStatus(id, status)
-    await addTaskEvent(id, eventType)
+  const handleBatchStatusChange = async (changes: TaskStatusChange[]) => {
+    await batchUpdateTaskStatus(changes)
   }
 
   const handleUpdate = async (
@@ -74,7 +67,7 @@ export function PlanPage() {
       <TaskList
         tasks={tasks || []}
         goals={goals || []}
-        onStatusChange={handleStatusChange}
+        onBatchStatusChange={handleBatchStatusChange}
         onUpdate={handleUpdate}
         onDelete={handleDelete}
       />
