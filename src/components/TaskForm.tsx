@@ -74,6 +74,8 @@ export function TaskForm({ goals, onCreate }: TaskFormProps) {
   }
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    // 한글 IME 조합 중에는 Enter 처리를 무시
+    if (e.nativeEvent.isComposing) return
     if (e.key === 'Enter' && title.trim()) {
       handleSubmit()
     }
