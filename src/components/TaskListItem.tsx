@@ -142,6 +142,10 @@ export function TaskListItem({
   const startedTime = isInProgress ? getLastStartedTime(task) : null
   const elapsedTime = startedTime ? formatElapsedTime(startedTime) : ''
 
+  // 편집 중이거나 저장 직후(DB 반영 대기 중)에는 editTitle 표시
+  const displayTitle =
+    isEditing || editTitle !== task.title ? editTitle : task.title
+
   // 실시간 경과 시간 업데이트를 위한 tick
   useEffect(() => {
     if (!isInProgress || !startedTime) {
@@ -220,7 +224,7 @@ export function TaskListItem({
             autoFocus
           />
         ) : (
-          <Title $inProgress={isInProgress}>{task.title}</Title>
+          <Title $inProgress={isInProgress}>{displayTitle}</Title>
         )}
         {isInProgress && elapsedTime && (
           <ElapsedTime>
