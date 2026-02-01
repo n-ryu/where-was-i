@@ -5,10 +5,16 @@ import {
   waitFor,
   within,
 } from '@testing-library/react'
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { HomePage } from './HomePage'
 import { db } from '../db/database'
 import * as taskRepository from '../db/taskRepository'
+
+// useNavigate mock
+const mockNavigate = vi.fn()
+vi.mock('@tanstack/react-router', () => ({
+  useNavigate: () => mockNavigate,
+}))
 
 function getTodayString(): string {
   const today = new Date()
@@ -18,22 +24,37 @@ function getTodayString(): string {
 describe('HomePage', () => {
   beforeEach(async () => {
     await db.tasks.clear()
+    mockNavigate.mockClear()
   })
 
   afterEach(async () => {
     await db.tasks.clear()
   })
 
-  describe('화면 구조', () => {
-    it('상단에 새 과업 입력 폼이 표시되어야 한다', async () => {
+  describe('리다이렉트', () => {
+    it('오늘 과업이 없으면 /plan으로 리다이렉트해야 한다', async () => {
       render(<HomePage />)
 
       await waitFor(() => {
-        expect(screen.getByPlaceholderText('새 과업 입력')).toBeInTheDocument()
-        expect(screen.getByRole('button', { name: '추가' })).toBeInTheDocument()
+        expect(mockNavigate).toHaveBeenCalledWith({ to: '/plan' })
       })
     })
 
+    it('오늘 과업이 있으면 리다이렉트하지 않아야 한다', async () => {
+      const today = getTodayString()
+      await taskRepository.createTask({ title: '오늘 과업', date: today })
+
+      render(<HomePage />)
+
+      await waitFor(() => {
+        expect(screen.getByText('오늘 과업')).toBeInTheDocument()
+      })
+
+      expect(mockNavigate).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('화면 구조', () => {
     it('오늘 날짜의 과업 목록이 표시되어야 한다', async () => {
       const today = getTodayString()
       await taskRepository.createTask({ title: '오늘 과업', date: today })
@@ -50,24 +71,34 @@ describe('HomePage', () => {
       expect(screen.queryByText('다른 날 과업')).not.toBeInTheDocument()
     })
 
-    it('과업이 없을 때 빈 상태 메시지가 표시되어야 한다', async () => {
+    it('하단에 FloatingInput이 표시되어야 한다', async () => {
+      const today = getTodayString()
+      await taskRepository.createTask({ title: '오늘 과업', date: today })
+
       render(<HomePage />)
 
       await waitFor(() => {
-        expect(screen.getByText('등록된 과업이 없습니다')).toBeInTheDocument()
+        expect(
+          screen.getByPlaceholderText('새 과업을 입력하세요')
+        ).toBeInTheDocument()
       })
     })
   })
 
   describe('과업 생성', () => {
-    it('새 과업을 입력하고 추가하면 오늘 날짜로 과업이 생성되어야 한다', async () => {
+    it('FloatingInput으로 새 과업을 생성할 수 있어야 한다', async () => {
+      const today = getTodayString()
+      await taskRepository.createTask({ title: '기존 과업', date: today })
+
       render(<HomePage />)
 
       await waitFor(() => {
-        expect(screen.getByPlaceholderText('새 과업 입력')).toBeInTheDocument()
+        expect(
+          screen.getByPlaceholderText('새 과업을 입력하세요')
+        ).toBeInTheDocument()
       })
 
-      const input = screen.getByPlaceholderText('새 과업 입력')
+      const input = screen.getByPlaceholderText('새 과업을 입력하세요')
       const button = screen.getByRole('button', { name: '추가' })
 
       fireEvent.change(input, { target: { value: '새로운 과업' } })
@@ -78,11 +109,9 @@ describe('HomePage', () => {
       })
 
       // DB에서 확인
-      const today = getTodayString()
       const tasks = await taskRepository.getTasksByDate(today)
-      expect(tasks).toHaveLength(1)
-      expect(tasks[0].title).toBe('새로운 과업')
-      expect(tasks[0].date).toBe(today)
+      expect(tasks).toHaveLength(2)
+      expect(tasks.map((t) => t.title)).toContain('새로운 과업')
     })
   })
 
@@ -211,6 +240,7 @@ describe('HomePage', () => {
     it('과업을 삭제할 수 있어야 한다', async () => {
       const today = getTodayString()
       await taskRepository.createTask({ title: '삭제할 과업', date: today })
+      await taskRepository.createTask({ title: '남을 과업', date: today })
 
       render(<HomePage />)
 
@@ -218,15 +248,27 @@ describe('HomePage', () => {
         expect(screen.getByText('삭제할 과업')).toBeInTheDocument()
       })
 
-      // 삭제 버튼 클릭
-      fireEvent.click(screen.getByRole('button', { name: '삭제' }))
+      // 삭제할 과업을 포함하는 리스트 아이템 찾기
+      const taskElement = screen.getByText('삭제할 과업')
+      const listItem = taskElement.closest('li')!
 
-      // 확인 버튼 클릭
-      fireEvent.click(screen.getByRole('button', { name: '확인' }))
+      // 해당 아이템의 삭제 버튼 클릭
+      const deleteButton = within(listItem).getByRole('button', {
+        name: '삭제',
+      })
+      fireEvent.click(deleteButton)
+
+      // 확인 버튼이 나타날 때까지 대기 후 클릭
+      await waitFor(() => {
+        expect(
+          within(listItem).getByRole('button', { name: '확인' })
+        ).toBeInTheDocument()
+      })
+      fireEvent.click(within(listItem).getByRole('button', { name: '확인' }))
 
       await waitFor(() => {
         expect(screen.queryByText('삭제할 과업')).not.toBeInTheDocument()
-        expect(screen.getByText('등록된 과업이 없습니다')).toBeInTheDocument()
+        expect(screen.getByText('남을 과업')).toBeInTheDocument()
       })
     })
   })

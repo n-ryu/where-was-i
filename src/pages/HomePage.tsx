@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useEffect } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import { useLiveQuery } from 'dexie-react-hooks'
 import styled from 'styled-components'
-import type { Task } from '../types'
-import { TaskForm } from '../components/TaskForm'
+import { FloatingInput } from '../components/FloatingInput'
 import { TaskList, type TaskStatusChange } from '../components/TaskList'
 import * as taskRepository from '../db/taskRepository'
 
@@ -9,6 +10,7 @@ const Container = styled.div`
   max-width: 600px;
   margin: 0 auto;
   padding: 16px;
+  padding-bottom: 100px; /* FloatingInput 공간 */
 `
 
 const Header = styled.header`
@@ -23,6 +25,14 @@ const Title = styled.h1`
 const DateText = styled.p`
   color: #666;
   margin: 0;
+`
+
+const LoadingContainer = styled.div`
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 16px;
+  text-align: center;
+  color: #666;
 `
 
 function getTodayString(): string {
@@ -41,53 +51,47 @@ function formatDateKorean(dateString: string): string {
 }
 
 export function HomePage() {
-  const [tasks, setTasks] = useState<Task[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-
+  const navigate = useNavigate()
   const today = getTodayString()
 
-  const loadData = useCallback(async () => {
-    try {
-      const todayTasks = await taskRepository.getTasksByDate(today)
-      setTasks(todayTasks)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [today])
+  const tasks = useLiveQuery(
+    () => taskRepository.getTasksByDate(today),
+    [today]
+  )
 
+  // 오늘 Task가 없으면 /plan으로 리다이렉트
   useEffect(() => {
-    loadData()
-  }, [loadData])
+    if (tasks !== undefined && tasks.length === 0) {
+      navigate({ to: '/plan' })
+    }
+  }, [tasks, navigate])
 
-  const handleCreate = async (input: { title: string }) => {
+  const handleCreate = async (title: string) => {
     await taskRepository.createTask({
-      title: input.title,
+      title,
       date: today,
     })
-    await loadData()
   }
 
   const handleBatchStatusChange = async (changes: TaskStatusChange[]) => {
     await taskRepository.batchUpdateTaskStatus(changes)
-    await loadData()
   }
 
   const handleUpdate = async (id: string, input: { title?: string }) => {
     await taskRepository.updateTask(id, input)
-    await loadData()
   }
 
   const handleDelete = async (id: string) => {
     await taskRepository.deleteTask(id)
-    await loadData()
   }
 
-  if (isLoading) {
-    return (
-      <Container>
-        <p>로딩 중...</p>
-      </Container>
-    )
+  if (tasks === undefined) {
+    return <LoadingContainer>로딩 중...</LoadingContainer>
+  }
+
+  // 리다이렉트 중이면 아무것도 렌더링하지 않음
+  if (tasks.length === 0) {
+    return null
   }
 
   return (
@@ -97,9 +101,7 @@ export function HomePage() {
         <DateText>{formatDateKorean(today)}</DateText>
       </Header>
 
-      <TaskForm onCreate={handleCreate} />
-
-      <section style={{ marginTop: '24px' }}>
+      <section>
         <TaskList
           tasks={tasks}
           onBatchStatusChange={handleBatchStatusChange}
@@ -107,6 +109,11 @@ export function HomePage() {
           onDelete={handleDelete}
         />
       </section>
+
+      <FloatingInput
+        placeholder="새 과업을 입력하세요"
+        onSubmit={handleCreate}
+      />
     </Container>
   )
 }
