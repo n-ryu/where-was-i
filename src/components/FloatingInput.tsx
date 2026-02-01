@@ -9,7 +9,7 @@ export interface FloatingInputProps {
 
 const Container = styled.div`
   position: fixed;
-  bottom: 0;
+  bottom: 60px; /* 탭바 위 */
   left: 0;
   right: 0;
   padding: 12px 16px;
@@ -17,6 +17,7 @@ const Container = styled.div`
   border-top: 1px solid #e0e0e0;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
   z-index: 100;
+  box-sizing: border-box;
 `
 
 const InputWrapper = styled.div`
