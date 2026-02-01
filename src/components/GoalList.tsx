@@ -4,7 +4,7 @@ import { GoalListItem } from './GoalListItem'
 
 export interface GoalListProps {
   goals: Goal[]
-  onUpdate: (id: string, input: { title?: string; memo?: string }) => void
+  onUpdate: (id: string, input: { title?: string }) => void
   onDelete: (id: string) => void
   onToggleActive: (id: string, isActive: boolean) => void
   size?: 'default' | 'compact'

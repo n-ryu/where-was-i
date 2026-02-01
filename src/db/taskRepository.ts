@@ -4,13 +4,11 @@ import type { Task, TaskStatus, TaskEventType, TaskEvent } from '../types'
 export interface CreateTaskInput {
   title: string
   date: string
-  memo?: string
   goalId?: string
 }
 
 export interface UpdateTaskInput {
   title?: string
-  memo?: string
   goalId?: string
   status?: TaskStatus
   date?: string
@@ -27,7 +25,6 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
     title: input.title,
     status: 'pending',
     goalId: input.goalId,
-    memo: input.memo,
     date: input.date,
     events: [],
     createdAt: now,
@@ -84,15 +81,13 @@ export async function updateTaskStatus(
 
 export async function addTaskEvent(
   id: string,
-  eventType: TaskEventType,
-  memo?: string
+  eventType: TaskEventType
 ): Promise<Task | undefined> {
   const task = await db.tasks.get(id)
   if (!task) return undefined
 
   const event: TaskEvent = {
     eventType,
-    memo,
     timestamp: new Date(),
   }
 

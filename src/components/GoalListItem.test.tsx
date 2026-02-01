@@ -7,7 +7,6 @@ import type { Goal } from '../types'
 const createMockGoal = (overrides?: Partial<Goal>): Goal => ({
   id: 'goal-1',
   title: '테스트 목표',
-  memo: '테스트 메모',
   isActive: true,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
@@ -22,11 +21,10 @@ describe('GoalListItem', () => {
     onToggleActive: vi.fn(),
   }
 
-  it('Goal 제목과 메모를 표시한다', () => {
+  it('Goal 제목을 표시한다', () => {
     render(<GoalListItem {...defaultProps} />)
 
     expect(screen.getByText('테스트 목표')).toBeInTheDocument()
-    expect(screen.getByText('테스트 메모')).toBeInTheDocument()
   })
 
   it('비활성 Goal은 흐리게 표시된다', () => {
@@ -61,18 +59,6 @@ describe('GoalListItem', () => {
       expect(screen.getByDisplayValue('수정된 목표')).toBeInTheDocument()
     })
 
-    it('편집 모드에서 메모를 수정할 수 있다', async () => {
-      const user = userEvent.setup()
-      render(<GoalListItem {...defaultProps} />)
-
-      await user.click(screen.getByRole('button', { name: '편집' }))
-      const memoInput = screen.getByDisplayValue('테스트 메모')
-      await user.clear(memoInput)
-      await user.type(memoInput, '수정된 메모')
-
-      expect(screen.getByDisplayValue('수정된 메모')).toBeInTheDocument()
-    })
-
     it('저장 버튼 클릭 시 변경사항이 저장된다', async () => {
       const user = userEvent.setup()
       const onUpdate = vi.fn()
@@ -86,7 +72,6 @@ describe('GoalListItem', () => {
 
       expect(onUpdate).toHaveBeenCalledWith('goal-1', {
         title: '수정된 목표',
-        memo: '테스트 메모',
       })
     })
 

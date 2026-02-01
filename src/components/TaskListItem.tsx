@@ -10,10 +10,7 @@ export interface TaskListItemProps {
     status: TaskStatus,
     eventType: TaskEventType
   ) => void
-  onUpdate: (
-    id: string,
-    input: { title?: string; memo?: string; goalId?: string }
-  ) => void
+  onUpdate: (id: string, input: { title?: string; goalId?: string }) => void
   onDelete: (id: string) => void
 }
 
@@ -35,12 +32,6 @@ const Content = styled.div`
 
 const Title = styled.div`
   font-weight: 500;
-  margin-bottom: 4px;
-`
-
-const Memo = styled.div`
-  font-size: 14px;
-  color: #666;
 `
 
 const GoalTag = styled.span`
@@ -110,7 +101,6 @@ export function TaskListItem({
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [editTitle, setEditTitle] = useState(task.title)
-  const [editMemo, setEditMemo] = useState(task.memo || '')
   const [editGoalId, setEditGoalId] = useState(task.goalId || '')
 
   const linkedGoal = goals.find((g) => g.id === task.goalId)
@@ -132,7 +122,6 @@ export function TaskListItem({
   const handleSave = () => {
     onUpdate(task.id, {
       title: editTitle,
-      memo: editMemo,
       goalId: editGoalId || undefined,
     })
     setIsEditing(false)
@@ -140,7 +129,6 @@ export function TaskListItem({
 
   const handleCancel = () => {
     setEditTitle(task.title)
-    setEditMemo(task.memo || '')
     setEditGoalId(task.goalId || '')
     setIsEditing(false)
   }
@@ -168,12 +156,6 @@ export function TaskListItem({
             value={editTitle}
             onChange={(e) => setEditTitle(e.target.value)}
             placeholder="과업 제목"
-          />
-          <Input
-            type="text"
-            value={editMemo}
-            onChange={(e) => setEditMemo(e.target.value)}
-            placeholder="메모"
           />
           <Select
             value={editGoalId}
@@ -207,7 +189,6 @@ export function TaskListItem({
           {task.title}
           {linkedGoal && <GoalTag>{linkedGoal.title}</GoalTag>}
         </Title>
-        {task.memo && <Memo>{task.memo}</Memo>}
       </Content>
       <Actions>
         {isDeleting ? (

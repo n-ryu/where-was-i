@@ -30,7 +30,6 @@ describe('Database', () => {
     const sampleGoal: Goal = {
       id: 'goal-1',
       title: '운동 습관 만들기',
-      memo: '주 3회 운동',
       isActive: true,
       createdAt: new Date('2025-01-01'),
       updatedAt: new Date('2025-01-01'),
@@ -83,7 +82,6 @@ describe('Database', () => {
       title: '아침 조깅하기',
       status: 'pending',
       goalId: 'goal-1',
-      memo: '공원에서',
       date: '2025-01-15',
       events: [],
       createdAt: new Date('2025-01-15'),

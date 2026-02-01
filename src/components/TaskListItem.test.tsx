@@ -7,7 +7,6 @@ const createMockTask = (overrides?: Partial<Task>): Task => ({
   id: 'task-1',
   title: '테스트 과업',
   status: 'pending',
-  memo: '',
   date: '2024-01-01',
   events: [],
   createdAt: new Date('2024-01-01'),
@@ -18,7 +17,6 @@ const createMockTask = (overrides?: Partial<Task>): Task => ({
 const createMockGoal = (overrides?: Partial<Goal>): Goal => ({
   id: 'goal-1',
   title: '테스트 목표',
-  memo: '',
   isActive: true,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
@@ -38,12 +36,6 @@ describe('TaskListItem', () => {
     it('Task 제목을 표시한다', () => {
       render(<TaskListItem {...defaultProps} />)
       expect(screen.getByText('테스트 과업')).toBeInTheDocument()
-    })
-
-    it('Task 메모가 있으면 메모를 표시한다', () => {
-      const task = createMockTask({ memo: '메모 내용' })
-      render(<TaskListItem {...defaultProps} task={task} />)
-      expect(screen.getByText('메모 내용')).toBeInTheDocument()
     })
 
     it('연결된 Goal 이름을 표시한다', () => {
@@ -168,15 +160,6 @@ describe('TaskListItem', () => {
       expect(screen.getByDisplayValue('수정된 과업')).toBeInTheDocument()
     })
 
-    it('편집 모드에서 메모를 수정할 수 있다', () => {
-      const task = createMockTask({ memo: '원래 메모' })
-      render(<TaskListItem {...defaultProps} task={task} />)
-      fireEvent.click(screen.getByText('편집'))
-      const input = screen.getByDisplayValue('원래 메모')
-      fireEvent.change(input, { target: { value: '수정된 메모' } })
-      expect(screen.getByDisplayValue('수정된 메모')).toBeInTheDocument()
-    })
-
     it('편집 모드에서 Goal을 변경할 수 있다', () => {
       const goals = [
         createMockGoal({ id: 'goal-1', title: '목표 1' }),
@@ -198,7 +181,6 @@ describe('TaskListItem', () => {
       fireEvent.click(screen.getByText('저장'))
       expect(onUpdate).toHaveBeenCalledWith('task-1', {
         title: '수정된 과업',
-        memo: '',
         goalId: undefined,
       })
       expect(screen.queryByDisplayValue('수정된 과업')).not.toBeInTheDocument()

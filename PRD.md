@@ -38,7 +38,6 @@ ADHD 환자 혹은 꾸준한 집중과 과업 추적이 필요한 사용자를 �
 |------|------|------|
 | id | string | 고유 식별자 |
 | title | string | 목표 제목 |
-| memo | string? | 메모 |
 | isActive | boolean | 활성 여부 (비활성화하면 리마인드에서 제외) |
 | createdAt | datetime | 생성 시각 |
 | updatedAt | datetime | 수정 시각 |
@@ -53,7 +52,6 @@ ADHD 환자 혹은 꾸준한 집중과 과업 추적이 필요한 사용자를 �
 | title | string | 과업 제목 |
 | status | enum | 대기(pending), 진행중(in_progress), 완료(completed), 취소(cancelled) |
 | goalId | string? | 연결된 Goal ID (선택적) |
-| memo | string? | 메모 |
 | date | date | 수행 예정 날짜 |
 | events | TaskEvent[] | 상태 변화 이벤트 로그 |
 | createdAt | datetime | 생성 시각 |
@@ -66,7 +64,6 @@ Task 내부에 배열로 저장되는 상태 변화 기록. 회고 시 타임라
 | 속성 | 타입 | 설명 |
 |------|------|------|
 | eventType | enum | started(시작), paused(일시정지), completed(완료), cancelled(취소) |
-| memo | string? | 변경 사유 등 메모 |
 | timestamp | datetime | 이벤트 발생 시각 |
 
 **이벤트 기록 규칙:**
@@ -136,12 +133,6 @@ Task 내부에 배열로 저장되는 상태 변화 기록. 회고 시 타임라
 | 대기중 과업 클릭 | 해당 과업이 진행중으로 변경, 기존 진행중 과업은 대기로 |
 | 상단 인풋에 입력 | 새 과업 생성 (계획에 없던 과업), AI가 과업 분리 |
 
-#### 전환 사유 기록 (임시)
-
-- 과업 전환 시 사유 입력 인풋이 일시적으로 나타남
-- 사용자 인터랙션을 방해하지 않는 위치에 표시
-- 일정 시간 후 자동으로 사라짐 (입력하지 않아도 됨)
-
 #### 사용자 설정
 
 - 추적 주기: 설정 화면에서 직접 입력 (예: 30분, 1시간)
@@ -190,7 +181,6 @@ Task 내부에 배열로 저장되는 상태 변화 기록. 회고 시 타임라
 3. **일과 중 추적**
    - 현재 Task 기록
    - Task 상태 변경
-   - 변경 사유 기록
    - 주기적 기록 요청
 
 4. **매일 회고 (일부)**

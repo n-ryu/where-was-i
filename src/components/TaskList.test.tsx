@@ -7,7 +7,6 @@ const createMockTask = (overrides?: Partial<Task>): Task => ({
   id: 'task-1',
   title: '테스트 과업',
   status: 'pending',
-  memo: '',
   date: '2024-01-01',
   events: [],
   createdAt: new Date('2024-01-01'),
@@ -18,7 +17,6 @@ const createMockTask = (overrides?: Partial<Task>): Task => ({
 const createMockGoal = (overrides?: Partial<Goal>): Goal => ({
   id: 'goal-1',
   title: '테스트 목표',
-  memo: '',
   isActive: true,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),

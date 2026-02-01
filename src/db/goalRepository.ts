@@ -3,12 +3,10 @@ import type { Goal } from '../types'
 
 export interface CreateGoalInput {
   title: string
-  memo?: string
 }
 
 export interface UpdateGoalInput {
   title?: string
-  memo?: string
   isActive?: boolean
 }
 
@@ -21,7 +19,6 @@ export async function createGoal(input: CreateGoalInput): Promise<Goal> {
   const goal: Goal = {
     id: generateId(),
     title: input.title,
-    memo: input.memo,
     isActive: true,
     createdAt: now,
     updatedAt: now,

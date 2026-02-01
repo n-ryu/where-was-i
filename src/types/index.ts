@@ -2,7 +2,6 @@
 export interface Goal {
   id: string
   title: string
-  memo?: string
   isActive: boolean
   createdAt: Date
   updatedAt: Date
@@ -17,7 +16,6 @@ export type TaskEventType = 'started' | 'paused' | 'completed' | 'cancelled'
 /** Task 이벤트 (상태 변화 기록) */
 export interface TaskEvent {
   eventType: TaskEventType
-  memo?: string
   timestamp: Date
 }
 
@@ -27,7 +25,6 @@ export interface Task {
   title: string
   status: TaskStatus
   goalId?: string
-  memo?: string
   date: string // YYYY-MM-DD 형식
   events: TaskEvent[]
   createdAt: Date

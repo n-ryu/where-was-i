@@ -12,10 +12,7 @@ export interface TaskListProps {
   tasks: Task[]
   goals: Goal[]
   onBatchStatusChange: (changes: TaskStatusChange[]) => void
-  onUpdate: (
-    id: string,
-    input: { title?: string; memo?: string; goalId?: string }
-  ) => void
+  onUpdate: (id: string, input: { title?: string; goalId?: string }) => void
   onDelete: (id: string) => void
 }
 

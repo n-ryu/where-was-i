@@ -49,7 +49,7 @@ export function PlanPage() {
 
   const handleUpdate = async (
     id: string,
-    input: { title?: string; memo?: string; goalId?: string }
+    input: { title?: string; goalId?: string }
   ) => {
     await updateTask(id, input)
   }

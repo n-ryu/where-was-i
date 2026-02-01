@@ -4,7 +4,7 @@ import type { Goal } from '../types'
 
 export interface GoalListItemProps {
   goal: Goal
-  onUpdate: (id: string, input: { title?: string; memo?: string }) => void
+  onUpdate: (id: string, input: { title?: string }) => void
   onDelete: (id: string) => void
   onToggleActive: (id: string, isActive: boolean) => void
 }
@@ -24,12 +24,6 @@ const Content = styled.div`
 
 const Title = styled.div`
   font-weight: 500;
-  margin-bottom: 4px;
-`
-
-const Memo = styled.div`
-  font-size: 14px;
-  color: #666;
 `
 
 const Actions = styled.div`
@@ -81,16 +75,14 @@ export function GoalListItem({
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [editTitle, setEditTitle] = useState(goal.title)
-  const [editMemo, setEditMemo] = useState(goal.memo || '')
 
   const handleSave = () => {
-    onUpdate(goal.id, { title: editTitle, memo: editMemo })
+    onUpdate(goal.id, { title: editTitle })
     setIsEditing(false)
   }
 
   const handleCancel = () => {
     setEditTitle(goal.title)
-    setEditMemo(goal.memo || '')
     setIsEditing(false)
   }
 
@@ -122,12 +114,6 @@ export function GoalListItem({
             onChange={(e) => setEditTitle(e.target.value)}
             placeholder="목표 제목"
           />
-          <Input
-            type="text"
-            value={editMemo}
-            onChange={(e) => setEditMemo(e.target.value)}
-            placeholder="메모"
-          />
           <Actions>
             <Button onClick={handleSave}>저장</Button>
             <Button onClick={handleCancel}>취소</Button>
@@ -146,7 +132,6 @@ export function GoalListItem({
       />
       <Content>
         <Title>{goal.title}</Title>
-        {goal.memo && <Memo>{goal.memo}</Memo>}
       </Content>
       <Actions>
         {isDeleting ? (

@@ -6,7 +6,6 @@ import type { Goal } from '../types'
 const createMockGoal = (overrides?: Partial<Goal>): Goal => ({
   id: 'goal-1',
   title: '테스트 목표',
-  memo: '테스트 메모',
   isActive: true,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),

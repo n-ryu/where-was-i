@@ -40,13 +40,11 @@ describe('TaskRepository', () => {
       const created = await createTask({
         title: '독서하기',
         date: '2025-01-15',
-        memo: '30분',
       })
       const task = await getTask(created.id)
 
       expect(task).toBeDefined()
       expect(task?.title).toBe('독서하기')
-      expect(task?.memo).toBe('30분')
     })
 
     it('존재하지 않는 Task 조회 시 undefined를 반환한다', async () => {
@@ -175,13 +173,6 @@ describe('TaskRepository', () => {
       const updated = await addTaskEvent(task.id, 'cancelled')
 
       expect(updated?.events[0].eventType).toBe('cancelled')
-    })
-
-    it('이벤트 추가 시 memo를 함께 저장할 수 있다', async () => {
-      const task = await createTask({ title: '과업', date: '2025-01-15' })
-      const updated = await addTaskEvent(task.id, 'paused', '점심시간')
-
-      expect(updated?.events[0].memo).toBe('점심시간')
     })
   })
 })

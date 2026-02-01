@@ -32,12 +32,11 @@ describe('GoalRepository', () => {
     })
 
     it('Goal을 ID로 조회할 수 있다', async () => {
-      const created = await createGoal({ title: '독서하기', memo: '매일 30분' })
+      const created = await createGoal({ title: '독서하기' })
       const goal = await getGoal(created.id)
 
       expect(goal).toBeDefined()
       expect(goal?.title).toBe('독서하기')
-      expect(goal?.memo).toBe('매일 30분')
     })
 
     it('존재하지 않는 Goal 조회 시 undefined를 반환한다', async () => {

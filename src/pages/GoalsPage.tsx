@@ -60,10 +60,7 @@ export function GoalsPage() {
     setNewTitle('')
   }
 
-  const handleUpdate = async (
-    id: string,
-    input: { title?: string; memo?: string }
-  ) => {
+  const handleUpdate = async (id: string, input: { title?: string }) => {
     await updateGoal(id, input)
   }
 
