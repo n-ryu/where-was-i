@@ -1,0 +1,5 @@
+export { HomePage } from './HomePage'
+export { PlanPage } from './PlanPage'
+export { ReviewPage } from './ReviewPage'
+export { GoalsPage } from './GoalsPage'
+export { SettingsPage } from './SettingsPage'
