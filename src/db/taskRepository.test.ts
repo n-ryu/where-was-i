@@ -10,6 +10,7 @@ import {
   getTasksByGoalId,
   updateTaskStatus,
   addTaskEvent,
+  getUncompletedTasksBefore,
 } from './taskRepository'
 
 describe('TaskRepository', () => {
@@ -173,6 +174,58 @@ describe('TaskRepository', () => {
       const updated = await addTaskEvent(task.id, 'cancelled')
 
       expect(updated?.events[0].eventType).toBe('cancelled')
+    })
+  })
+
+  describe('getUncompletedTasksBefore', () => {
+    it('특정 날짜 이전의 pending 상태 Task를 조회할 수 있다', async () => {
+      await createTask({ title: '어제 과업', date: '2025-01-14' })
+      await createTask({ title: '그제 과업', date: '2025-01-13' })
+
+      const tasks = await getUncompletedTasksBefore('2025-01-15')
+
+      expect(tasks).toHaveLength(2)
+      expect(tasks.every((t) => t.status === 'pending')).toBe(true)
+    })
+
+    it('특정 날짜 이전의 in_progress 상태 Task를 조회할 수 있다', async () => {
+      const task = await createTask({
+        title: '진행중 과업',
+        date: '2025-01-14',
+      })
+      await updateTaskStatus(task.id, 'in_progress')
+
+      const tasks = await getUncompletedTasksBefore('2025-01-15')
+
+      expect(tasks).toHaveLength(1)
+      expect(tasks[0].status).toBe('in_progress')
+    })
+
+    it('completed/cancelled 상태 Task는 조회되지 않는다', async () => {
+      const task1 = await createTask({
+        title: '완료된 과업',
+        date: '2025-01-14',
+      })
+      const task2 = await createTask({
+        title: '취소된 과업',
+        date: '2025-01-14',
+      })
+      await updateTaskStatus(task1.id, 'completed')
+      await updateTaskStatus(task2.id, 'cancelled')
+
+      const tasks = await getUncompletedTasksBefore('2025-01-15')
+
+      expect(tasks).toHaveLength(0)
+    })
+
+    it('특정 날짜 당일 Task는 조회되지 않는다', async () => {
+      await createTask({ title: '오늘 과업', date: '2025-01-15' })
+      await createTask({ title: '어제 과업', date: '2025-01-14' })
+
+      const tasks = await getUncompletedTasksBefore('2025-01-15')
+
+      expect(tasks).toHaveLength(1)
+      expect(tasks[0].title).toBe('어제 과업')
     })
   })
 })
