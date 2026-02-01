@@ -4,26 +4,92 @@ import {
   createRoute,
   Outlet,
   Link,
+  useRouterState,
 } from '@tanstack/react-router'
+import styled from 'styled-components'
 import { HomePage, PlanPage, ReviewPage, SettingsPage } from './pages'
+
+const AppContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+`
+
+const Main = styled.main`
+  flex: 1;
+  padding-bottom: 60px; /* 탭바 높이만큼 여백 */
+`
+
+const TabBar = styled.nav`
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: #fff;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  z-index: 50;
+`
+
+const TabLink = styled(Link)<{ $active?: boolean }>`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: ${(props) => (props.$active ? '#1976d2' : '#666')};
+  font-size: 12px;
+  gap: 4px;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #1976d2;
+  }
+`
+
+const TabIcon = styled.span`
+  font-size: 20px;
+`
+
+const TabLabel = styled.span`
+  font-weight: 500;
+`
 
 const rootRoute = createRootRoute({
   component: RootLayout,
 })
 
 function RootLayout() {
+  const routerState = useRouterState()
+  const currentPath = routerState.location.pathname
+
   return (
-    <div>
-      <nav>
-        <Link to="/">메인</Link>
-        <Link to="/plan">계획</Link>
-        <Link to="/review">회고</Link>
-        <Link to="/settings">설정</Link>
-      </nav>
-      <main>
+    <AppContainer>
+      <Main>
         <Outlet />
-      </main>
-    </div>
+      </Main>
+      <TabBar>
+        <TabLink to="/" $active={currentPath === '/'}>
+          <TabIcon>📋</TabIcon>
+          <TabLabel>과업</TabLabel>
+        </TabLink>
+        <TabLink to="/plan" $active={currentPath === '/plan'}>
+          <TabIcon>📝</TabIcon>
+          <TabLabel>계획</TabLabel>
+        </TabLink>
+        <TabLink to="/log" $active={currentPath === '/log'}>
+          <TabIcon>📊</TabIcon>
+          <TabLabel>로그</TabLabel>
+        </TabLink>
+        <TabLink to="/settings" $active={currentPath === '/settings'}>
+          <TabIcon>⚙️</TabIcon>
+          <TabLabel>설정</TabLabel>
+        </TabLink>
+      </TabBar>
+    </AppContainer>
   )
 }
 
@@ -39,9 +105,9 @@ const planRoute = createRoute({
   component: PlanPage,
 })
 
-const reviewRoute = createRoute({
+const logRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/review',
+  path: '/log',
   component: ReviewPage,
 })
 
@@ -54,7 +120,7 @@ const settingsRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   planRoute,
-  reviewRoute,
+  logRoute,
   settingsRoute,
 ])
 
