@@ -34,14 +34,16 @@ const LoadingContainer = styled.div`
 
 function getTodayString(): string {
   const today = new Date()
-  return today.toISOString().split('T')[0]
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 function formatDateKorean(dateString: string): string {
-  const date = new Date(dateString)
-  const year = date.getFullYear()
-  const month = date.getMonth() + 1
-  const day = date.getDate()
+  // YYYY-MM-DD 형식을 로컬 타임존으로 파싱
+  const [year, month, day] = dateString.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
   const weekdays = ['일', '월', '화', '수', '목', '금', '토']
   const weekday = weekdays[date.getDay()]
   return `${year}년 ${month}월 ${day}일 (${weekday})`
