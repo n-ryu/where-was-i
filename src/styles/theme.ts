@@ -6,6 +6,8 @@ export const theme = {
     text: '#0f172a',
     textSecondary: '#64748b',
     border: '#e2e8f0',
+    accent: '#22c55e',
+    accentLight: '#f0fdf4',
   },
   spacing: {
     xs: '0.25rem',
