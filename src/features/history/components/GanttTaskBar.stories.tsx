@@ -42,18 +42,6 @@ export const Stopped: Story = {
   },
 }
 
-export const Completed: Story = {
-  args: {
-    block: makeTimeBlock({
-      todoId: '1',
-      todoTitle: 'Task A',
-      startTime: new Date('2025-06-01T09:00:00'),
-      endTime: new Date('2025-06-01T11:00:00'),
-      endReason: 'completed',
-    }),
-  },
-}
-
 export const Ongoing: Story = {
   args: {
     block: makeTimeBlock({

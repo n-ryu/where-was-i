@@ -23,7 +23,15 @@ export interface TimeBlock {
   todoTitle: string
   startTime: Date
   endTime: Date | null
-  endReason: 'stopped' | 'completed' | 'ongoing'
+  endReason: 'stopped' | 'ongoing'
+}
+
+export interface TimeMarker {
+  todoId: string
+  todoTitle: string
+  timestamp: Date
+  eventType: 'completed' | 'reopened'
+  dimmed: boolean
 }
 
 export const timeBlocksAtom = atom<TimeBlock[]>((get) => {
@@ -53,7 +61,7 @@ export const timeBlocksAtom = atom<TimeBlock[]>((get) => {
           todoTitle: title,
           startTime: startEvent.timestamp,
           endTime: event.timestamp,
-          endReason: event.eventType === 'completed' ? 'completed' : 'stopped',
+          endReason: 'stopped',
         })
         openStarts.delete(event.todoId)
       }
@@ -72,4 +80,46 @@ export const timeBlocksAtom = atom<TimeBlock[]>((get) => {
   }
 
   return blocks.sort((a, b) => b.startTime.getTime() - a.startTime.getTime())
+})
+
+export const timeMarkersAtom = atom<TimeMarker[]>((get) => {
+  const events = get(historyEventsAtom)
+  const todoLookup = get(todoLookupAtom)
+
+  const relevant = events
+    .filter((e) => e.eventType === 'completed' || e.eventType === 'reopened')
+    .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+
+  const markers: TimeMarker[] = []
+  const lastCompleted = new Map<string, number>()
+
+  for (const event of relevant) {
+    const title = todoLookup.get(event.todoId)?.title ?? 'Unknown'
+
+    if (event.eventType === 'completed') {
+      markers.push({
+        todoId: event.todoId,
+        todoTitle: title,
+        timestamp: event.timestamp,
+        eventType: 'completed',
+        dimmed: false,
+      })
+      lastCompleted.set(event.todoId, markers.length - 1)
+    } else if (event.eventType === 'reopened') {
+      const completedIdx = lastCompleted.get(event.todoId)
+      if (completedIdx !== undefined) {
+        markers[completedIdx].dimmed = true
+        lastCompleted.delete(event.todoId)
+      }
+      markers.push({
+        todoId: event.todoId,
+        todoTitle: title,
+        timestamp: event.timestamp,
+        eventType: 'reopened',
+        dimmed: false,
+      })
+    }
+  }
+
+  return markers.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
 })

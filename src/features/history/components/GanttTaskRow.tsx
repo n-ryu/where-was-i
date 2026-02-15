@@ -1,10 +1,12 @@
 import styled from 'styled-components'
-import type { TimeBlock } from '@/stores/historyAtoms'
+import type { TimeBlock, TimeMarker } from '@/stores/historyAtoms'
 import { GanttTaskBar } from './GanttTaskBar'
+import { GanttEventMarker } from './GanttEventMarker'
 
 interface GanttTaskRowProps {
   todoTitle: string
   blocks: TimeBlock[]
+  markers: TimeMarker[]
   hourStart: number
   hourEnd: number
   pixelsPerHour: number
@@ -42,6 +44,7 @@ const BarArea = styled.div<{ $totalWidth: number }>`
 export const GanttTaskRow = ({
   todoTitle,
   blocks,
+  markers,
   hourStart,
   hourEnd,
   pixelsPerHour,
@@ -55,8 +58,17 @@ export const GanttTaskRow = ({
       <BarArea $totalWidth={totalWidth}>
         {blocks.map((block, i) => (
           <GanttTaskBar
-            key={`${block.todoId}-${i}`}
+            key={`block-${block.todoId}-${i}`}
             block={block}
+            hourStart={hourStart}
+            pixelsPerHour={pixelsPerHour}
+            dayStart={dayStart}
+          />
+        ))}
+        {markers.map((marker, i) => (
+          <GanttEventMarker
+            key={`marker-${marker.todoId}-${i}`}
+            marker={marker}
             hourStart={hourStart}
             pixelsPerHour={pixelsPerHour}
             dayStart={dayStart}

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { GanttTaskRow } from './GanttTaskRow'
-import { makeTimeBlock, sampleDate } from '@/stories/mocks/history'
+import { makeTimeBlock, makeTimeMarker, sampleDate } from '@/stories/mocks/history'
 
 const meta = {
   title: 'History/GanttTaskRow',
@@ -10,6 +10,7 @@ const meta = {
     hourEnd: 18,
     pixelsPerHour: 60,
     dayStart: sampleDate,
+    markers: [],
   },
 } satisfies Meta<typeof GanttTaskRow>
 
@@ -25,7 +26,14 @@ export const SingleBlock: Story = {
         todoTitle: 'Design schema',
         startTime: new Date('2025-06-01T09:00:00'),
         endTime: new Date('2025-06-01T11:00:00'),
-        endReason: 'completed',
+        endReason: 'stopped',
+      }),
+    ],
+    markers: [
+      makeTimeMarker({
+        todoId: '1',
+        todoTitle: 'Design schema',
+        timestamp: new Date('2025-06-01T11:00:00'),
       }),
     ],
   },
@@ -47,7 +55,28 @@ export const MultipleBlocks: Story = {
         todoTitle: 'Implement auth',
         startTime: new Date('2025-06-01T13:00:00'),
         endTime: new Date('2025-06-01T15:00:00'),
-        endReason: 'completed',
+        endReason: 'stopped',
+      }),
+    ],
+    markers: [
+      makeTimeMarker({
+        todoId: '1',
+        todoTitle: 'Implement auth',
+        timestamp: new Date('2025-06-01T15:00:00'),
+      }),
+    ],
+  },
+}
+
+export const DirectCompletion: Story = {
+  args: {
+    todoTitle: 'Quick fix',
+    blocks: [],
+    markers: [
+      makeTimeMarker({
+        todoId: '1',
+        todoTitle: 'Quick fix',
+        timestamp: new Date('2025-06-01T10:30:00'),
       }),
     ],
   },

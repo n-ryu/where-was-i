@@ -1,11 +1,12 @@
 import { useMemo } from 'react'
 import styled, { keyframes } from 'styled-components'
-import type { TimeBlock } from '@/stores/historyAtoms'
+import type { TimeBlock, TimeMarker } from '@/stores/historyAtoms'
 import { GanttTimeAxis } from './GanttTimeAxis'
 import { GanttTaskRow } from './GanttTaskRow'
 
 interface GanttChartProps {
   timeBlocks: TimeBlock[]
+  timeMarkers: TimeMarker[]
   selectedDate: Date
 }
 
@@ -60,7 +61,11 @@ const getHoursFromMidnight = (date: Date, dayStart: Date): number => {
   return (date.getTime() - midnight.getTime()) / (1000 * 60 * 60)
 }
 
-export const GanttChart = ({ timeBlocks, selectedDate }: GanttChartProps) => {
+export const GanttChart = ({
+  timeBlocks,
+  timeMarkers,
+  selectedDate,
+}: GanttChartProps) => {
   const dayBlocks = useMemo(() => {
     return timeBlocks.filter((block) => {
       const blockStart = block.startTime
@@ -69,16 +74,25 @@ export const GanttChart = ({ timeBlocks, selectedDate }: GanttChartProps) => {
     })
   }, [timeBlocks, selectedDate])
 
-  const { hourStart, hourEnd, taskGroups } = useMemo(() => {
-    if (dayBlocks.length === 0) {
-      return { hourStart: 9, hourEnd: 18, taskGroups: new Map<string, TimeBlock[]>() }
+  const dayMarkers = useMemo(() => {
+    return timeMarkers.filter((marker) => isSameDay(marker.timestamp, selectedDate))
+  }, [timeMarkers, selectedDate])
+
+  const { hourStart, hourEnd, taskGroups, markerGroups, allTodoIds } = useMemo(() => {
+    if (dayBlocks.length === 0 && dayMarkers.length === 0) {
+      return {
+        hourStart: 9,
+        hourEnd: 18,
+        taskGroups: new Map<string, TimeBlock[]>(),
+        markerGroups: new Map<string, TimeMarker[]>(),
+        allTodoIds: [] as string[],
+      }
     }
 
     let minHour = 24
     let maxHour = 0
 
-    const groups = new Map<string, TimeBlock[]>()
-
+    const blockGroups = new Map<string, TimeBlock[]>()
     for (const block of dayBlocks) {
       const startH = getHoursFromMidnight(block.startTime, selectedDate)
       const endH = block.endTime
@@ -88,19 +102,34 @@ export const GanttChart = ({ timeBlocks, selectedDate }: GanttChartProps) => {
       minHour = Math.min(minHour, startH)
       maxHour = Math.max(maxHour, endH)
 
-      const existing = groups.get(block.todoId) ?? []
+      const existing = blockGroups.get(block.todoId) ?? []
       existing.push(block)
-      groups.set(block.todoId, existing)
+      blockGroups.set(block.todoId, existing)
     }
+
+    const mGroups = new Map<string, TimeMarker[]>()
+    for (const marker of dayMarkers) {
+      const h = getHoursFromMidnight(marker.timestamp, selectedDate)
+      minHour = Math.min(minHour, h)
+      maxHour = Math.max(maxHour, h)
+
+      const existing = mGroups.get(marker.todoId) ?? []
+      existing.push(marker)
+      mGroups.set(marker.todoId, existing)
+    }
+
+    const todoIds = new Set([...blockGroups.keys(), ...mGroups.keys()])
 
     return {
       hourStart: Math.max(0, Math.floor(minHour) - 1),
       hourEnd: Math.min(24, Math.ceil(maxHour) + 1),
-      taskGroups: groups,
+      taskGroups: blockGroups,
+      markerGroups: mGroups,
+      allTodoIds: Array.from(todoIds),
     }
-  }, [dayBlocks, selectedDate])
+  }, [dayBlocks, dayMarkers, selectedDate])
 
-  if (dayBlocks.length === 0) {
+  if (dayBlocks.length === 0 && dayMarkers.length === 0) {
     return <EmptyState>No activity on this day</EmptyState>
   }
 
@@ -115,17 +144,23 @@ export const GanttChart = ({ timeBlocks, selectedDate }: GanttChartProps) => {
             pixelsPerHour={PIXELS_PER_HOUR}
           />
         </TimeAxisRow>
-        {Array.from(taskGroups.entries()).map(([todoId, blocks]) => (
-          <GanttTaskRow
-            key={todoId}
-            todoTitle={blocks[0].todoTitle}
-            blocks={blocks}
-            hourStart={hourStart}
-            hourEnd={hourEnd}
-            pixelsPerHour={PIXELS_PER_HOUR}
-            dayStart={selectedDate}
-          />
-        ))}
+        {allTodoIds.map((todoId) => {
+          const blocks = taskGroups.get(todoId) ?? []
+          const markers = markerGroups.get(todoId) ?? []
+          const title = blocks[0]?.todoTitle ?? markers[0]?.todoTitle ?? 'Unknown'
+          return (
+            <GanttTaskRow
+              key={todoId}
+              todoTitle={title}
+              blocks={blocks}
+              markers={markers}
+              hourStart={hourStart}
+              hourEnd={hourEnd}
+              pixelsPerHour={PIXELS_PER_HOUR}
+              dayStart={selectedDate}
+            />
+          )
+        })}
       </ChartInner>
     </ChartContainer>
   )
