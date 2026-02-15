@@ -47,4 +47,16 @@ describe('TaskInput', () => {
     await userEvent.type(input, '  New task  {Enter}')
     expect(onAddTodo).toHaveBeenCalledWith('New task')
   })
+
+  it('should disable submit button when input is empty', () => {
+    renderWithTheme(<TaskInput onAddTodo={vi.fn()} />)
+    expect(screen.getByRole('button', { name: /add task/i })).toBeDisabled()
+  })
+
+  it('should enable submit button when input has value', async () => {
+    renderWithTheme(<TaskInput onAddTodo={vi.fn()} />)
+    const input = screen.getByRole('textbox')
+    await userEvent.type(input, 'New task')
+    expect(screen.getByRole('button', { name: /add task/i })).toBeEnabled()
+  })
 })

@@ -10,7 +10,7 @@ export const GlobalStyle = createGlobalStyle`
   body {
     font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     color: #0f172a;
-    background-color: #ffffff;
+    background-color: ${({ theme }) => theme.layout.desktopBg};
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
   }

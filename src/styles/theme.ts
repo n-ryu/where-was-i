@@ -25,6 +25,10 @@ export const theme = {
     md: '8px',
     lg: '12px',
   },
+  layout: {
+    maxWidth: '430px',
+    desktopBg: '#f1f5f9',
+  },
 } as const
 
 export type Theme = typeof theme

@@ -31,7 +31,7 @@ describe('TaskList', () => {
     expect(screen.getByLabelText('In progress')).toBeInTheDocument()
   })
 
-  it('should render pending tasks', () => {
+  it('should render pending tasks with section label', () => {
     const pendingTodos = [
       makeTodo({ id: '1', title: 'Pending 1' }),
       makeTodo({ id: '2', title: 'Pending 2' }),
@@ -44,11 +44,12 @@ describe('TaskList', () => {
         onToggleStatus={onToggleStatus}
       />,
     )
+    expect(screen.getByText('Pending')).toBeInTheDocument()
     expect(screen.getByText('Pending 1')).toBeInTheDocument()
     expect(screen.getByText('Pending 2')).toBeInTheDocument()
   })
 
-  it('should render completed tasks', () => {
+  it('should render completed tasks with section label', () => {
     const completedTodos = [
       makeTodo({ id: '1', title: 'Done 1', status: 'completed' }),
     ]
@@ -60,6 +61,7 @@ describe('TaskList', () => {
         onToggleStatus={onToggleStatus}
       />,
     )
+    expect(screen.getByText('Completed')).toBeInTheDocument()
     expect(screen.getByText('Done 1')).toBeInTheDocument()
   })
 

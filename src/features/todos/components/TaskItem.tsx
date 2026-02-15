@@ -1,20 +1,43 @@
-import styled, { css } from 'styled-components'
+import styled, { css, keyframes } from 'styled-components'
 import type { TaskItemProps } from '../types'
 import type { TodoStatus } from '@/db/schema'
+
+const taskEnter = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`
 
 const ItemContainer = styled.li`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.spacing.sm};
-  padding: ${({ theme }) => `${theme.spacing.sm} ${theme.spacing.md}`};
+  padding: ${({ theme }) => `${theme.spacing.xs} ${theme.spacing.md}`};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  animation: ${taskEnter} 200ms ease-out;
+  transition: background 150ms ease;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.surface};
+  }
 `
 
 const Checkbox = styled.input`
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
   cursor: pointer;
   accent-color: ${({ theme }) => theme.colors.accent};
+  transition: transform 150ms ease;
+
+  &:active {
+    transform: scale(0.85);
+  }
 `
 
 const Body = styled.button<{ $status: TodoStatus }>`
@@ -22,6 +45,12 @@ const Body = styled.button<{ $status: TodoStatus }>`
   flex: 1;
   min-width: 0;
   cursor: ${({ $status }) => ($status === 'completed' ? 'default' : 'pointer')};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  transition: color 200ms ease, opacity 200ms ease, background 100ms ease;
+
+  &:active {
+    background: ${({ theme }) => theme.colors.surface};
+  }
 
   ${({ $status, theme }) =>
     $status === 'in_progress' &&
