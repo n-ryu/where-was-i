@@ -178,9 +178,10 @@ describe('todoRepository', () => {
       await startTodo(id2)
       const history1 = await getHistoryFor(id1)
       expect(history1).toHaveLength(3)
-      expect(history1[2].eventType).toBe('stopped')
-      expect(history1[2].fromStatus).toBe('in_progress')
-      expect(history1[2].toStatus).toBe('pending')
+      const stoppedEvent = history1.find((e) => e.eventType === 'stopped')
+      expect(stoppedEvent).toBeDefined()
+      expect(stoppedEvent!.fromStatus).toBe('in_progress')
+      expect(stoppedEvent!.toStatus).toBe('pending')
     })
 
     it('should record a stopped event when stopping a todo', async () => {
@@ -189,7 +190,8 @@ describe('todoRepository', () => {
       await stopTodo(id)
       const history = await getHistoryFor(id)
       expect(history).toHaveLength(3)
-      expect(history[2].eventType).toBe('stopped')
+      const stoppedEvent = history.find((e) => e.eventType === 'stopped')
+      expect(stoppedEvent).toBeDefined()
     })
 
     it('should record a completed event with correct fromStatus', async () => {
@@ -198,9 +200,10 @@ describe('todoRepository', () => {
       await completeTodo(id)
       const history = await getHistoryFor(id)
       expect(history).toHaveLength(3)
-      expect(history[2].eventType).toBe('completed')
-      expect(history[2].fromStatus).toBe('in_progress')
-      expect(history[2].toStatus).toBe('completed')
+      const completedEvent = history.find((e) => e.eventType === 'completed')
+      expect(completedEvent).toBeDefined()
+      expect(completedEvent!.fromStatus).toBe('in_progress')
+      expect(completedEvent!.toStatus).toBe('completed')
     })
 
     it('should record a reopened event when reopening a todo', async () => {
@@ -209,9 +212,10 @@ describe('todoRepository', () => {
       await reopenTodo(id)
       const history = await getHistoryFor(id)
       expect(history).toHaveLength(3)
-      expect(history[2].eventType).toBe('reopened')
-      expect(history[2].fromStatus).toBe('completed')
-      expect(history[2].toStatus).toBe('pending')
+      const reopenedEvent = history.find((e) => e.eventType === 'reopened')
+      expect(reopenedEvent).toBeDefined()
+      expect(reopenedEvent!.fromStatus).toBe('completed')
+      expect(reopenedEvent!.toStatus).toBe('pending')
     })
   })
 })

@@ -8,6 +8,8 @@ export const theme = {
     border: '#e2e8f0',
     accent: '#22c55e',
     accentLight: '#f0fdf4',
+    warning: '#f59e0b',
+    surfaceAlt: '#f1f5f9',
   },
   spacing: {
     xs: '0.25rem',

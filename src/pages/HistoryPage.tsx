@@ -1,7 +1,4 @@
 import styled from 'styled-components'
-import { useTodos } from '@/features/todos/hooks/useTodos'
-import { TaskList } from '@/features/todos/components/TaskList'
-import { TaskInput } from '@/features/todos/components/TaskInput'
 
 const PageContainer = styled.div`
   max-width: ${({ theme }) => theme.layout.maxWidth};
@@ -21,16 +18,10 @@ const Header = styled.header`
   padding: ${({ theme }) => `${theme.spacing.xs} ${theme.spacing.md}`};
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: ${({ theme }) => theme.spacing.sm};
 `
 
-const Title = styled.h1`
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.text};
-`
-
-const HistoryButton = styled.button`
+const BackButton = styled.button`
   background: none;
   border: none;
   padding: ${({ theme }) => theme.spacing.sm};
@@ -50,32 +41,35 @@ const HistoryButton = styled.button`
   }
 `
 
-interface MainPageProps {
-  onNavigateToHistory: () => void
+const Title = styled.h1`
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text};
+`
+
+const Placeholder = styled.div`
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 0.95rem;
+`
+
+interface HistoryPageProps {
+  onNavigateBack: () => void
 }
 
-export const MainPage = ({ onNavigateToHistory }: MainPageProps) => {
-  const { inProgressTodo, pendingTodos, completedTodos, addTodo, toggleStatus } =
-    useTodos()
-
+export const HistoryPage = ({ onNavigateBack }: HistoryPageProps) => {
   return (
     <PageContainer>
       <Header>
-        <Title>where was i</Title>
-        <HistoryButton
-          onClick={onNavigateToHistory}
-          aria-label="View history"
-        >
-          &#x1f552;
-        </HistoryButton>
+        <BackButton onClick={onNavigateBack} aria-label="Go back">
+          &larr;
+        </BackButton>
+        <Title>History</Title>
       </Header>
-      <TaskList
-        inProgressTodo={inProgressTodo}
-        pendingTodos={pendingTodos}
-        completedTodos={completedTodos}
-        onToggleStatus={toggleStatus}
-      />
-      <TaskInput onAddTodo={addTodo} />
+      <Placeholder>Timeline coming soon</Placeholder>
     </PageContainer>
   )
 }
