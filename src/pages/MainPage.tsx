@@ -3,7 +3,7 @@ import { useTodos } from '@/features/todos/hooks/useTodos'
 import { TaskList } from '@/features/todos/components/TaskList'
 import { TaskInput } from '@/features/todos/components/TaskInput'
 
-const PageContainer = styled.div`
+export const PageContainer = styled.div`
   max-width: ${({ theme }) => theme.layout.maxWidth};
   margin: 0 auto;
   height: 100dvh;
@@ -16,7 +16,7 @@ const PageContainer = styled.div`
   }
 `
 
-const Header = styled.header`
+export const Header = styled.header`
   flex-shrink: 0;
   padding: ${({ theme }) => `${theme.spacing.xs} ${theme.spacing.md}`};
   display: flex;
@@ -24,13 +24,13 @@ const Header = styled.header`
   justify-content: space-between;
 `
 
-const Title = styled.h1`
+export const Title = styled.h1`
   font-size: 1.25rem;
   font-weight: 600;
   color: ${({ theme }) => theme.colors.text};
 `
 
-const HistoryButton = styled.button`
+export const HistoryButton = styled.button`
   background: none;
   border: none;
   padding: ${({ theme }) => theme.spacing.sm};

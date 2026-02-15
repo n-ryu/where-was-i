@@ -3,7 +3,7 @@ import { useHistory } from '@/features/history/hooks/useHistory'
 import { DayPicker } from '@/features/history/components/DayPicker'
 import { GanttChart } from '@/features/history/components/GanttChart'
 
-const PageContainer = styled.div`
+export const PageContainer = styled.div`
   max-width: ${({ theme }) => theme.layout.maxWidth};
   margin: 0 auto;
   height: 100dvh;
@@ -16,7 +16,7 @@ const PageContainer = styled.div`
   }
 `
 
-const Header = styled.header`
+export const Header = styled.header`
   flex-shrink: 0;
   padding: ${({ theme }) => `${theme.spacing.xs} ${theme.spacing.md}`};
   display: flex;
@@ -24,7 +24,7 @@ const Header = styled.header`
   gap: ${({ theme }) => theme.spacing.sm};
 `
 
-const BackButton = styled.button`
+export const BackButton = styled.button`
   background: none;
   border: none;
   padding: ${({ theme }) => theme.spacing.sm};
@@ -44,7 +44,7 @@ const BackButton = styled.button`
   }
 `
 
-const Title = styled.h1`
+export const Title = styled.h1`
   font-size: 1.25rem;
   font-weight: 600;
   color: ${({ theme }) => theme.colors.text};
