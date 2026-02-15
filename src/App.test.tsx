@@ -1,10 +1,10 @@
-import { render, screen } from '@testing-library/react'
-import { describe, it, expect } from 'vitest'
+import { screen } from '@testing-library/react'
+import { renderWithTheme } from '@/test-utils'
 import { App } from './App'
 
 describe('App', () => {
   it('renders the title', () => {
-    render(<App />)
+    renderWithTheme(<App />)
     expect(screen.getByText('where was i')).toBeInTheDocument()
   })
 })
