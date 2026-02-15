@@ -1,4 +1,5 @@
 import { db } from '@/db/schema'
+import type { TodoHistoryEvent } from '@/db/schema'
 import {
   addTodo,
   getAllTodos,
@@ -7,6 +8,10 @@ import {
   completeTodo,
   reopenTodo,
 } from './todoRepository'
+
+const getHistoryFor = async (todoId: string): Promise<TodoHistoryEvent[]> => {
+  return db.todoHistory.where('todoId').equals(todoId).sortBy('timestamp')
+}
 
 beforeEach(async () => {
   await db.delete()
@@ -142,6 +147,71 @@ describe('todoRepository', () => {
       await reopenTodo(id)
       const todo = await db.todos.get(id)
       expect(todo!.status).toBe('pending')
+    })
+  })
+
+  describe('history tracking', () => {
+    it('should record a created event when adding a todo', async () => {
+      const id = await addTodo('Test task')
+      const history = await getHistoryFor(id)
+      expect(history).toHaveLength(1)
+      expect(history[0].eventType).toBe('created')
+      expect(history[0].fromStatus).toBeNull()
+      expect(history[0].toStatus).toBe('pending')
+    })
+
+    it('should record a started event when starting a todo', async () => {
+      const id = await addTodo('Test task')
+      await startTodo(id)
+      const history = await getHistoryFor(id)
+      expect(history).toHaveLength(2)
+      const startedEvent = history.find((e) => e.eventType === 'started')
+      expect(startedEvent).toBeDefined()
+      expect(startedEvent!.fromStatus).toBe('pending')
+      expect(startedEvent!.toStatus).toBe('in_progress')
+    })
+
+    it('should record stopped event for auto-demoted todo when starting another', async () => {
+      const id1 = await addTodo('Task 1')
+      const id2 = await addTodo('Task 2')
+      await startTodo(id1)
+      await startTodo(id2)
+      const history1 = await getHistoryFor(id1)
+      expect(history1).toHaveLength(3)
+      expect(history1[2].eventType).toBe('stopped')
+      expect(history1[2].fromStatus).toBe('in_progress')
+      expect(history1[2].toStatus).toBe('pending')
+    })
+
+    it('should record a stopped event when stopping a todo', async () => {
+      const id = await addTodo('Test task')
+      await startTodo(id)
+      await stopTodo(id)
+      const history = await getHistoryFor(id)
+      expect(history).toHaveLength(3)
+      expect(history[2].eventType).toBe('stopped')
+    })
+
+    it('should record a completed event with correct fromStatus', async () => {
+      const id = await addTodo('Test task')
+      await startTodo(id)
+      await completeTodo(id)
+      const history = await getHistoryFor(id)
+      expect(history).toHaveLength(3)
+      expect(history[2].eventType).toBe('completed')
+      expect(history[2].fromStatus).toBe('in_progress')
+      expect(history[2].toStatus).toBe('completed')
+    })
+
+    it('should record a reopened event when reopening a todo', async () => {
+      const id = await addTodo('Test task')
+      await completeTodo(id)
+      await reopenTodo(id)
+      const history = await getHistoryFor(id)
+      expect(history).toHaveLength(3)
+      expect(history[2].eventType).toBe('reopened')
+      expect(history[2].fromStatus).toBe('completed')
+      expect(history[2].toStatus).toBe('pending')
     })
   })
 })
