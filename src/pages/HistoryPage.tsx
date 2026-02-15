@@ -1,4 +1,7 @@
 import styled from 'styled-components'
+import { useHistory } from '@/features/history/hooks/useHistory'
+import { DayPicker } from '@/features/history/components/DayPicker'
+import { GanttChart } from '@/features/history/components/GanttChart'
 
 const PageContainer = styled.div`
   max-width: ${({ theme }) => theme.layout.maxWidth};
@@ -47,20 +50,13 @@ const Title = styled.h1`
   color: ${({ theme }) => theme.colors.text};
 `
 
-const Placeholder = styled.div`
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: ${({ theme }) => theme.colors.textSecondary};
-  font-size: 0.95rem;
-`
-
 interface HistoryPageProps {
   onNavigateBack: () => void
 }
 
 export const HistoryPage = ({ onNavigateBack }: HistoryPageProps) => {
+  const { timeBlocks, selectedDate, setSelectedDate } = useHistory()
+
   return (
     <PageContainer>
       <Header>
@@ -69,7 +65,8 @@ export const HistoryPage = ({ onNavigateBack }: HistoryPageProps) => {
         </BackButton>
         <Title>History</Title>
       </Header>
-      <Placeholder>Timeline coming soon</Placeholder>
+      <DayPicker selectedDate={selectedDate} onDateChange={setSelectedDate} />
+      <GanttChart timeBlocks={timeBlocks} selectedDate={selectedDate} />
     </PageContainer>
   )
 }
