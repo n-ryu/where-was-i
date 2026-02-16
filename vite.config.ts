@@ -1,11 +1,15 @@
 /// <reference types="vitest/config" />
 import { resolve } from 'node:path'
+import basicSsl from '@vitejs/plugin-basic-ssl'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
   base: '/where-was-i/',
-  plugins: [react()],
+  plugins: [react(), basicSsl()],
+  server: {
+    host: true,
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
