@@ -3,7 +3,12 @@ import { fn } from 'storybook/test'
 import { DayPicker } from '@/features/history/components/DayPicker'
 import { GanttChart } from '@/features/history/components/GanttChart'
 import { PageContainer, Header, BackButton, Title } from './HistoryPage'
-import { sampleTimeBlocks, sampleTimeMarkers, sampleDate } from '@/stories/mocks/history'
+import {
+  sampleTimeBlocks,
+  sampleTimeMarkers,
+  sampleActiveTodos,
+  sampleDate,
+} from '@/stories/mocks/history'
 
 const meta = {
   title: 'Pages/HistoryPage',
@@ -23,7 +28,12 @@ export const WithActivity: Story = {
         <Title>History</Title>
       </Header>
       <DayPicker selectedDate={sampleDate} onDateChange={fn()} />
-      <GanttChart timeBlocks={sampleTimeBlocks} timeMarkers={sampleTimeMarkers} selectedDate={sampleDate} />
+      <GanttChart
+        timeBlocks={sampleTimeBlocks}
+        timeMarkers={sampleTimeMarkers}
+        activeTodos={sampleActiveTodos}
+        selectedDate={sampleDate}
+      />
     </PageContainer>
   ),
 }
@@ -38,7 +48,7 @@ export const NoActivity: Story = {
         <Title>History</Title>
       </Header>
       <DayPicker selectedDate={sampleDate} onDateChange={fn()} />
-      <GanttChart timeBlocks={[]} timeMarkers={[]} selectedDate={sampleDate} />
+      <GanttChart timeBlocks={[]} timeMarkers={[]} activeTodos={[]} selectedDate={sampleDate} />
     </PageContainer>
   ),
 }

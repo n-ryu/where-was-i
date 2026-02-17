@@ -1,12 +1,14 @@
 import { useMemo } from 'react'
 import styled, { keyframes } from 'styled-components'
 import type { TimeBlock, TimeMarker } from '@/stores/historyAtoms'
+import type { ActiveTodo } from '../types'
 import { GanttTimeAxis } from './GanttTimeAxis'
 import { GanttTaskRow } from './GanttTaskRow'
 
 interface GanttChartProps {
   timeBlocks: TimeBlock[]
   timeMarkers: TimeMarker[]
+  activeTodos: ActiveTodo[]
   selectedDate: Date
 }
 
@@ -64,6 +66,7 @@ const getHoursFromMidnight = (date: Date, dayStart: Date): number => {
 export const GanttChart = ({
   timeBlocks,
   timeMarkers,
+  activeTodos,
   selectedDate,
 }: GanttChartProps) => {
   const dayBlocks = useMemo(() => {
@@ -78,14 +81,13 @@ export const GanttChart = ({
     return timeMarkers.filter((marker) => isSameDay(marker.timestamp, selectedDate))
   }, [timeMarkers, selectedDate])
 
-  const { hourStart, hourEnd, taskGroups, markerGroups, allTodoIds } = useMemo(() => {
+  const { hourStart, hourEnd, taskGroups, markerGroups } = useMemo(() => {
     if (dayBlocks.length === 0 && dayMarkers.length === 0) {
       return {
         hourStart: 9,
         hourEnd: 18,
         taskGroups: new Map<string, TimeBlock[]>(),
         markerGroups: new Map<string, TimeMarker[]>(),
-        allTodoIds: [] as string[],
       }
     }
 
@@ -118,19 +120,29 @@ export const GanttChart = ({
       mGroups.set(marker.todoId, existing)
     }
 
-    const todoIds = new Set([...blockGroups.keys(), ...mGroups.keys()])
-
     return {
       hourStart: Math.max(0, Math.floor(minHour) - 1),
       hourEnd: Math.min(24, Math.ceil(maxHour) + 1),
       taskGroups: blockGroups,
       markerGroups: mGroups,
-      allTodoIds: Array.from(todoIds),
     }
   }, [dayBlocks, dayMarkers, selectedDate])
 
-  if (dayBlocks.length === 0 && dayMarkers.length === 0) {
-    return <EmptyState>No activity on this day</EmptyState>
+  const sortedTodos = useMemo(() => {
+    const withActivity: ActiveTodo[] = []
+    const withoutActivity: ActiveTodo[] = []
+    for (const todo of activeTodos) {
+      if (todo.dayStatus === 'inactive') {
+        withoutActivity.push(todo)
+      } else {
+        withActivity.push(todo)
+      }
+    }
+    return [...withActivity, ...withoutActivity]
+  }, [activeTodos])
+
+  if (activeTodos.length === 0) {
+    return <EmptyState>No todos on this day</EmptyState>
   }
 
   return (
@@ -144,23 +156,19 @@ export const GanttChart = ({
             pixelsPerHour={PIXELS_PER_HOUR}
           />
         </TimeAxisRow>
-        {allTodoIds.map((todoId) => {
-          const blocks = taskGroups.get(todoId) ?? []
-          const markers = markerGroups.get(todoId) ?? []
-          const title = blocks[0]?.todoTitle ?? markers[0]?.todoTitle ?? 'Unknown'
-          return (
-            <GanttTaskRow
-              key={todoId}
-              todoTitle={title}
-              blocks={blocks}
-              markers={markers}
-              hourStart={hourStart}
-              hourEnd={hourEnd}
-              pixelsPerHour={PIXELS_PER_HOUR}
-              dayStart={selectedDate}
-            />
-          )
-        })}
+        {sortedTodos.map((todo) => (
+          <GanttTaskRow
+            key={todo.todoId}
+            todoTitle={todo.todoTitle}
+            dayStatus={todo.dayStatus}
+            blocks={taskGroups.get(todo.todoId) ?? []}
+            markers={markerGroups.get(todo.todoId) ?? []}
+            hourStart={hourStart}
+            hourEnd={hourEnd}
+            pixelsPerHour={PIXELS_PER_HOUR}
+            dayStart={selectedDate}
+          />
+        ))}
       </ChartInner>
     </ChartContainer>
   )

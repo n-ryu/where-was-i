@@ -2,7 +2,6 @@ import styled from 'styled-components'
 import { useHistory } from '@/features/history/hooks/useHistory'
 import { DayPicker } from '@/features/history/components/DayPicker'
 import { GanttChart } from '@/features/history/components/GanttChart'
-import { IncompleteTodoList } from '@/features/history/components/IncompleteTodoList'
 
 export const PageContainer = styled.div`
   max-width: ${({ theme }) => theme.layout.maxWidth};
@@ -56,7 +55,7 @@ interface HistoryPageProps {
 }
 
 export const HistoryPage = ({ onNavigateBack }: HistoryPageProps) => {
-  const { timeBlocks, timeMarkers, selectedDate, setSelectedDate, incompleteTodos } =
+  const { timeBlocks, timeMarkers, selectedDate, setSelectedDate, activeTodos } =
     useHistory()
 
   return (
@@ -68,8 +67,12 @@ export const HistoryPage = ({ onNavigateBack }: HistoryPageProps) => {
         <Title>History</Title>
       </Header>
       <DayPicker selectedDate={selectedDate} onDateChange={setSelectedDate} />
-      <IncompleteTodoList todos={incompleteTodos} />
-      <GanttChart timeBlocks={timeBlocks} timeMarkers={timeMarkers} selectedDate={selectedDate} />
+      <GanttChart
+        timeBlocks={timeBlocks}
+        timeMarkers={timeMarkers}
+        activeTodos={activeTodos}
+        selectedDate={selectedDate}
+      />
     </PageContainer>
   )
 }

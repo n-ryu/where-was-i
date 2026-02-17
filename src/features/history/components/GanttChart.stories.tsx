@@ -9,6 +9,10 @@ import {
   reopenedTaskBlocks,
   reopenedTaskMarkers,
   sampleDate,
+  sampleActiveTodos,
+  singleTaskActiveTodos,
+  directCompletionActiveTodos,
+  reopenedTaskActiveTodos,
 } from '@/stories/mocks/history'
 
 const meta = {
@@ -17,6 +21,7 @@ const meta = {
   args: {
     selectedDate: sampleDate,
     timeMarkers: [],
+    activeTodos: [],
   },
 } satisfies Meta<typeof GanttChart>
 
@@ -24,21 +29,37 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Empty: Story = {
-  args: { timeBlocks: [], timeMarkers: [] },
+  args: { timeBlocks: [], timeMarkers: [], activeTodos: [] },
 }
 
 export const SingleTask: Story = {
-  args: { timeBlocks: singleTaskBlocks, timeMarkers: singleTaskMarkers },
+  args: {
+    timeBlocks: singleTaskBlocks,
+    timeMarkers: singleTaskMarkers,
+    activeTodos: singleTaskActiveTodos,
+  },
 }
 
 export const MultipleTasks: Story = {
-  args: { timeBlocks: sampleTimeBlocks, timeMarkers: sampleTimeMarkers },
+  args: {
+    timeBlocks: sampleTimeBlocks,
+    timeMarkers: sampleTimeMarkers,
+    activeTodos: sampleActiveTodos,
+  },
 }
 
 export const DirectCompletion: Story = {
-  args: { timeBlocks: [], timeMarkers: directCompletionMarkers },
+  args: {
+    timeBlocks: [],
+    timeMarkers: directCompletionMarkers,
+    activeTodos: directCompletionActiveTodos,
+  },
 }
 
 export const ReopenedTask: Story = {
-  args: { timeBlocks: reopenedTaskBlocks, timeMarkers: reopenedTaskMarkers },
+  args: {
+    timeBlocks: reopenedTaskBlocks,
+    timeMarkers: reopenedTaskMarkers,
+    activeTodos: reopenedTaskActiveTodos,
+  },
 }

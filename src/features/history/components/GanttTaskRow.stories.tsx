@@ -11,6 +11,7 @@ const meta = {
     pixelsPerHour: 60,
     dayStart: sampleDate,
     markers: [],
+    dayStatus: 'incomplete',
   },
 } satisfies Meta<typeof GanttTaskRow>
 
@@ -20,6 +21,7 @@ type Story = StoryObj<typeof meta>
 export const SingleBlock: Story = {
   args: {
     todoTitle: 'Design schema',
+    dayStatus: 'completed',
     blocks: [
       makeTimeBlock({
         todoId: '1',
@@ -42,6 +44,7 @@ export const SingleBlock: Story = {
 export const MultipleBlocks: Story = {
   args: {
     todoTitle: 'Implement auth',
+    dayStatus: 'incomplete',
     blocks: [
       makeTimeBlock({
         todoId: '1',
@@ -58,19 +61,14 @@ export const MultipleBlocks: Story = {
         endReason: 'stopped',
       }),
     ],
-    markers: [
-      makeTimeMarker({
-        todoId: '1',
-        todoTitle: 'Implement auth',
-        timestamp: new Date('2025-06-01T15:00:00'),
-      }),
-    ],
+    markers: [],
   },
 }
 
-export const DirectCompletion: Story = {
+export const Completed: Story = {
   args: {
     todoTitle: 'Quick fix',
+    dayStatus: 'completed',
     blocks: [],
     markers: [
       makeTimeMarker({
@@ -79,5 +77,14 @@ export const DirectCompletion: Story = {
         timestamp: new Date('2025-06-01T10:30:00'),
       }),
     ],
+  },
+}
+
+export const Inactive: Story = {
+  args: {
+    todoTitle: 'Update README',
+    dayStatus: 'inactive',
+    blocks: [],
+    markers: [],
   },
 }
