@@ -1,4 +1,5 @@
 import type { TimeBlock, TimeMarker } from '@/stores/historyAtoms'
+import type { ActiveTodo } from '@/features/history/types'
 
 export const makeTimeBlock = (
   overrides: Partial<TimeBlock> & { todoId: string; todoTitle: string },
@@ -127,4 +128,23 @@ export const reopenedTaskMarkers: TimeMarker[] = [
     todoTitle: 'Fix login bug',
     timestamp: new Date('2025-06-01T12:30:00'),
   }),
+]
+
+export const sampleActiveTodos: ActiveTodo[] = [
+  { todoId: 'todo-1', todoTitle: 'Implement user authentication', dayStatus: 'completed' },
+  { todoId: 'todo-2', todoTitle: 'Write API documentation', dayStatus: 'incomplete' },
+  { todoId: 'todo-3', todoTitle: 'Review pull request #42', dayStatus: 'incomplete' },
+  { todoId: 'todo-4', todoTitle: 'Update README', dayStatus: 'inactive' },
+]
+
+export const singleTaskActiveTodos: ActiveTodo[] = [
+  { todoId: 'todo-1', todoTitle: 'Implement feature', dayStatus: 'completed' },
+]
+
+export const directCompletionActiveTodos: ActiveTodo[] = [
+  { todoId: 'todo-4', todoTitle: 'Quick fix typo', dayStatus: 'completed' },
+]
+
+export const reopenedTaskActiveTodos: ActiveTodo[] = [
+  { todoId: 'todo-5', todoTitle: 'Fix login bug', dayStatus: 'completed' },
 ]
