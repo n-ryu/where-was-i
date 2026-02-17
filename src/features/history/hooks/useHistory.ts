@@ -75,7 +75,10 @@ export const useHistory = () => {
       const title = todoLookup.get(todoId)?.title ?? 'Unknown'
 
       const hasEventsOnDay = historyEvents.some(
-        (e) => e.todoId === todoId && isSameDay(e.timestamp, selectedDate),
+        (e) =>
+          e.todoId === todoId &&
+          e.eventType !== 'created' &&
+          isSameDay(e.timestamp, selectedDate),
       )
 
       const completedOnDay = timeMarkers.some(
