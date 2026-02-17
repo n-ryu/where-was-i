@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  base: '/where-was-i/',
+  base: process.env.VITE_BASE_PATH || '/where-was-i/',
   plugins: [react(), basicSsl()],
   server: {
     host: true,

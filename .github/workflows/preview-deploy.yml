@@ -1,0 +1,66 @@
+name: Deploy PR Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: pr-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install
+
+      - name: Build for PR preview
+        run: pnpm build
+        env:
+          VITE_BASE_PATH: /where-was-i/pr/${{ github.event.pull_request.number }}/
+
+      - name: Deploy to gh-pages branch
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          PR_DIR="pr/${PR_NUMBER}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Save build output
+          cp -r dist /tmp/dist
+
+          # Fetch and checkout gh-pages
+          git fetch origin gh-pages
+          git checkout gh-pages
+
+          # Clean and update only this PR's directory
+          rm -rf "${PR_DIR}"
+          mkdir -p "${PR_DIR}"
+          cp -r /tmp/dist/* "${PR_DIR}/"
+
+          # Commit and push
+          git add -A
+          git diff --cached --quiet && echo "No changes to deploy" && exit 0
+          git commit -m "deploy: update preview for PR #${PR_NUMBER}"
+          git push origin gh-pages
+
+      - name: Comment preview URL on PR
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            **Preview deployed!**
+            https://${{ github.repository_owner }}.github.io/where-was-i/pr/${{ github.event.pull_request.number }}/
