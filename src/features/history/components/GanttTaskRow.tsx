@@ -100,12 +100,18 @@ const BarArea = styled.div<{ $totalWidth: number }>`
   flex-shrink: 0;
 `
 
-const DashedLine = styled.div`
+const HatchedArea = styled.div`
   position: absolute;
-  top: 50%;
-  left: 8px;
-  right: 8px;
-  border-top: 1px dashed ${({ theme }) => theme.colors.border};
+  inset: 4px 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 3px,
+    ${({ theme }) => theme.colors.border} 3px,
+    ${({ theme }) => theme.colors.border} 4px
+  );
+  opacity: 0.5;
+  border-radius: ${({ theme }) => theme.radii.sm};
 `
 
 const statusIcons: Record<TodoDayStatus, string> = {
@@ -135,7 +141,7 @@ export const GanttTaskRow = ({
         <TitleText $completed={dayStatus === 'completed'}>{todoTitle}</TitleText>
       </TaskLabel>
       <BarArea $totalWidth={totalWidth}>
-        {dayStatus === 'inactive' && <DashedLine />}
+        {dayStatus === 'inactive' && <HatchedArea />}
         {blocks.map((block, i) => (
           <GanttTaskBar
             key={`block-${block.todoId}-${i}`}

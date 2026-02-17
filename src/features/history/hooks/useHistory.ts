@@ -74,15 +74,9 @@ export const useHistory = () => {
 
       const title = todoLookup.get(todoId)?.title ?? 'Unknown'
 
-      const hasBlocks = timeBlocks.some((b) => {
-        const blockStart = b.startTime
-        const blockEnd = b.endTime ?? new Date()
-        return (
-          b.todoId === todoId &&
-          (isSameDay(blockStart, selectedDate) ||
-            isSameDay(blockEnd, selectedDate))
-        )
-      })
+      const hasEventsOnDay = historyEvents.some(
+        (e) => e.todoId === todoId && isSameDay(e.timestamp, selectedDate),
+      )
 
       const completedOnDay = timeMarkers.some(
         (m) =>
@@ -95,7 +89,7 @@ export const useHistory = () => {
       let dayStatus: TodoDayStatus
       if (completedOnDay) {
         dayStatus = 'completed'
-      } else if (hasBlocks) {
+      } else if (hasEventsOnDay) {
         dayStatus = 'incomplete'
       } else {
         dayStatus = 'inactive'
@@ -105,7 +99,7 @@ export const useHistory = () => {
     }
 
     return result
-  }, [historyEvents, todoLookup, timeBlocks, timeMarkers, selectedDate])
+  }, [historyEvents, todoLookup, timeMarkers, selectedDate])
 
   return { timeBlocks, timeMarkers, selectedDate, setSelectedDate, activeTodos }
 }

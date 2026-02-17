@@ -129,16 +129,19 @@ export const GanttChart = ({
   }, [dayBlocks, dayMarkers, selectedDate])
 
   const sortedTodos = useMemo(() => {
-    const withActivity: ActiveTodo[] = []
-    const withoutActivity: ActiveTodo[] = []
+    const completed: ActiveTodo[] = []
+    const incomplete: ActiveTodo[] = []
+    const inactive: ActiveTodo[] = []
     for (const todo of activeTodos) {
-      if (todo.dayStatus === 'inactive') {
-        withoutActivity.push(todo)
+      if (todo.dayStatus === 'completed') {
+        completed.push(todo)
+      } else if (todo.dayStatus === 'inactive') {
+        inactive.push(todo)
       } else {
-        withActivity.push(todo)
+        incomplete.push(todo)
       }
     }
-    return [...withActivity, ...withoutActivity]
+    return [...completed, ...incomplete, ...inactive]
   }, [activeTodos])
 
   if (activeTodos.length === 0) {
