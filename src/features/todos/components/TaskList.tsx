@@ -1,12 +1,13 @@
 import styled, { keyframes } from 'styled-components'
 import type { Todo } from '@/db/schema'
 import type { TodoAction } from '../types'
+import { CompletedIcon, ActiveIcon, IdleIcon } from '@/components/StatusIcons'
 import { TaskItem } from './TaskItem'
 
 interface TaskListProps {
-  inProgressTodo: Todo | null
-  pendingTodos: Todo[]
-  completedTodos: Todo[]
+  completedTodayTodos: Todo[]
+  activeTodayTodos: Todo[]
+  idleTodos: Todo[]
   onToggleStatus: (params: { id: string; action: TodoAction }) => void
 }
 
@@ -26,17 +27,12 @@ const sectionEnter = keyframes`
   }
 `
 
-const InProgressSection = styled.section`
+const ActiveSection = styled.section`
   background: ${({ theme }) => theme.colors.accentLight};
   border-left: 3px solid ${({ theme }) => theme.colors.accent};
   margin: ${({ theme }) => theme.spacing.xs};
   border-radius: ${({ theme }) => theme.radii.md};
   animation: ${sectionEnter} 250ms ease-out;
-`
-
-const pulse = keyframes`
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
 `
 
 const SectionLabel = styled.span<{ $variant?: 'accent' | 'default' | 'muted' }>`
@@ -54,14 +50,6 @@ const SectionLabel = styled.span<{ $variant?: 'accent' | 'default' | 'muted' }>`
         : theme.colors.text};
   text-transform: uppercase;
   letter-spacing: 0.05em;
-`
-
-const PulseDot = styled.span`
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: ${({ theme }) => theme.colors.accent};
-  animation: ${pulse} 2s ease-in-out infinite;
 `
 
 const Section = styled.section`
@@ -105,12 +93,15 @@ const EmptyDescription = styled.p`
 `
 
 export const TaskList = ({
-  inProgressTodo,
-  pendingTodos,
-  completedTodos,
+  completedTodayTodos,
+  activeTodayTodos,
+  idleTodos,
   onToggleStatus,
 }: TaskListProps) => {
-  const isEmpty = !inProgressTodo && pendingTodos.length === 0 && completedTodos.length === 0
+  const isEmpty =
+    completedTodayTodos.length === 0 &&
+    activeTodayTodos.length === 0 &&
+    idleTodos.length === 0
 
   if (isEmpty) {
     return (
@@ -126,32 +117,40 @@ export const TaskList = ({
 
   return (
     <ListContainer>
-      {inProgressTodo && (
-        <InProgressSection aria-label="In progress">
+      {activeTodayTodos.length > 0 && (
+        <ActiveSection aria-label="Active tasks">
           <SectionLabel $variant="accent">
-            <PulseDot />
-            In Progress
+            <ActiveIcon size={14} />
+            Active
           </SectionLabel>
           <TaskUl>
-            <TaskItem todo={inProgressTodo} onToggleStatus={onToggleStatus} />
+            {activeTodayTodos.map((todo) => (
+              <TaskItem key={todo.id} todo={todo} onToggleStatus={onToggleStatus} />
+            ))}
           </TaskUl>
-        </InProgressSection>
+        </ActiveSection>
       )}
-      {pendingTodos.length > 0 && (
-        <Section aria-label="Pending tasks">
-          <SectionLabel $variant="default">Pending</SectionLabel>
+      {idleTodos.length > 0 && (
+        <Section aria-label="Idle tasks">
+          <SectionLabel $variant="default">
+            <IdleIcon size={14} />
+            Idle
+          </SectionLabel>
           <TaskUl>
-            {pendingTodos.map((todo) => (
+            {idleTodos.map((todo) => (
               <TaskItem key={todo.id} todo={todo} onToggleStatus={onToggleStatus} />
             ))}
           </TaskUl>
         </Section>
       )}
-      {completedTodos.length > 0 && (
+      {completedTodayTodos.length > 0 && (
         <Section aria-label="Completed tasks">
-          <SectionLabel $variant="muted">Completed</SectionLabel>
+          <SectionLabel $variant="muted">
+            <CompletedIcon size={14} />
+            Completed Today
+          </SectionLabel>
           <TaskUl>
-            {completedTodos.map((todo) => (
+            {completedTodayTodos.map((todo) => (
               <TaskItem key={todo.id} todo={todo} onToggleStatus={onToggleStatus} />
             ))}
           </TaskUl>

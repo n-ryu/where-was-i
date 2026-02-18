@@ -1,30 +1,33 @@
 import { useEffect } from 'react'
 import { useAtomValue, useSetAtom } from 'jotai'
 import {
-  inProgressTodoAtom,
-  pendingTodosAtom,
-  completedTodosAtom,
+  completedTodayTodosAtom,
+  activeTodayTodosAtom,
+  idleTodosAtom,
   loadTodosAtom,
+  loadTodayEventsAtom,
   addTodoAtom,
   toggleTodoStatusAtom,
 } from '@/stores/todoAtoms'
 
 export const useTodos = () => {
-  const inProgressTodo = useAtomValue(inProgressTodoAtom)
-  const pendingTodos = useAtomValue(pendingTodosAtom)
-  const completedTodos = useAtomValue(completedTodosAtom)
+  const completedTodayTodos = useAtomValue(completedTodayTodosAtom)
+  const activeTodayTodos = useAtomValue(activeTodayTodosAtom)
+  const idleTodos = useAtomValue(idleTodosAtom)
   const loadTodos = useSetAtom(loadTodosAtom)
+  const loadTodayEvents = useSetAtom(loadTodayEventsAtom)
   const addTodo = useSetAtom(addTodoAtom)
   const toggleStatus = useSetAtom(toggleTodoStatusAtom)
 
   useEffect(() => {
     loadTodos()
-  }, [loadTodos])
+    loadTodayEvents()
+  }, [loadTodos, loadTodayEvents])
 
   return {
-    inProgressTodo,
-    pendingTodos,
-    completedTodos,
+    completedTodayTodos,
+    activeTodayTodos,
+    idleTodos,
     addTodo,
     toggleStatus,
   }

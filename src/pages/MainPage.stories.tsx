@@ -5,9 +5,9 @@ import { TaskInput } from '@/features/todos/components/TaskInput'
 import { PageContainer, Header, Title, HistoryButton } from './MainPage'
 import {
   makeTodo,
-  sampleInProgressTodo,
-  samplePendingTodos,
-  sampleCompletedTodos,
+  sampleActiveTodayTodos,
+  sampleIdleTodos,
+  sampleCompletedTodayTodos,
 } from '@/stories/mocks/todos'
 
 const meta = {
@@ -28,9 +28,9 @@ export const AllSections: Story = {
         </HistoryButton>
       </Header>
       <TaskList
-        inProgressTodo={sampleInProgressTodo}
-        pendingTodos={samplePendingTodos}
-        completedTodos={sampleCompletedTodos}
+        completedTodayTodos={sampleCompletedTodayTodos}
+        activeTodayTodos={sampleActiveTodayTodos}
+        idleTodos={sampleIdleTodos}
         onToggleStatus={fn()}
       />
       <TaskInput onAddTodo={fn()} />
@@ -48,9 +48,9 @@ export const EmptyState: Story = {
         </HistoryButton>
       </Header>
       <TaskList
-        inProgressTodo={null}
-        pendingTodos={[]}
-        completedTodos={[]}
+        completedTodayTodos={[]}
+        activeTodayTodos={[]}
+        idleTodos={[]}
         onToggleStatus={fn()}
       />
       <TaskInput onAddTodo={fn()} />
@@ -58,7 +58,7 @@ export const EmptyState: Story = {
   ),
 }
 
-export const OnlyPending: Story = {
+export const OnlyIdle: Story = {
   render: () => (
     <PageContainer>
       <Header>
@@ -68,9 +68,9 @@ export const OnlyPending: Story = {
         </HistoryButton>
       </Header>
       <TaskList
-        inProgressTodo={null}
-        pendingTodos={samplePendingTodos}
-        completedTodos={[]}
+        completedTodayTodos={[]}
+        activeTodayTodos={[]}
+        idleTodos={sampleIdleTodos}
         onToggleStatus={fn()}
       />
       <TaskInput onAddTodo={fn()} />
@@ -88,16 +88,19 @@ export const ManyTasks: Story = {
         </HistoryButton>
       </Header>
       <TaskList
-        inProgressTodo={sampleInProgressTodo}
-        pendingTodos={Array.from({ length: 8 }, (_, i) =>
-          makeTodo({ id: `p-${i}`, title: `Pending task ${i + 1}` }),
-        )}
-        completedTodos={Array.from({ length: 5 }, (_, i) =>
+        completedTodayTodos={sampleCompletedTodayTodos}
+        activeTodayTodos={[
           makeTodo({
-            id: `c-${i}`,
-            title: `Completed task ${i + 1}`,
-            status: 'completed',
+            id: 'active-ip',
+            title: 'Currently working on this',
+            status: 'in_progress',
           }),
+          ...Array.from({ length: 4 }, (_, i) =>
+            makeTodo({ id: `a-${i}`, title: `Active task ${i + 1}` }),
+          ),
+        ]}
+        idleTodos={Array.from({ length: 6 }, (_, i) =>
+          makeTodo({ id: `idle-${i}`, title: `Idle task ${i + 1}` }),
         )}
         onToggleStatus={fn()}
       />

@@ -13,76 +13,76 @@ const makeTodo = (overrides: Partial<Todo> & { id: string; title: string }): Tod
 const onToggleStatus = vi.fn()
 
 describe('TaskList', () => {
-  it('should render in-progress task in a highlighted section', () => {
-    const inProgressTodo = makeTodo({
+  it('should render active tasks in a highlighted section', () => {
+    const activeTodo = makeTodo({
       id: '1',
       title: 'Working on this',
       status: 'in_progress',
     })
     renderWithTheme(
       <TaskList
-        inProgressTodo={inProgressTodo}
-        pendingTodos={[]}
-        completedTodos={[]}
+        completedTodayTodos={[]}
+        activeTodayTodos={[activeTodo]}
+        idleTodos={[]}
         onToggleStatus={onToggleStatus}
       />,
     )
     expect(screen.getByText('Working on this')).toBeInTheDocument()
-    expect(screen.getByLabelText('In progress')).toBeInTheDocument()
+    expect(screen.getByLabelText('Active tasks')).toBeInTheDocument()
   })
 
-  it('should render pending tasks with section label', () => {
-    const pendingTodos = [
-      makeTodo({ id: '1', title: 'Pending 1' }),
-      makeTodo({ id: '2', title: 'Pending 2' }),
+  it('should render idle tasks with section label', () => {
+    const idleTodos = [
+      makeTodo({ id: '1', title: 'Idle 1' }),
+      makeTodo({ id: '2', title: 'Idle 2' }),
     ]
     renderWithTheme(
       <TaskList
-        inProgressTodo={null}
-        pendingTodos={pendingTodos}
-        completedTodos={[]}
+        completedTodayTodos={[]}
+        activeTodayTodos={[]}
+        idleTodos={idleTodos}
         onToggleStatus={onToggleStatus}
       />,
     )
-    expect(screen.getByText('Pending')).toBeInTheDocument()
-    expect(screen.getByText('Pending 1')).toBeInTheDocument()
-    expect(screen.getByText('Pending 2')).toBeInTheDocument()
+    expect(screen.getByText('Idle')).toBeInTheDocument()
+    expect(screen.getByText('Idle 1')).toBeInTheDocument()
+    expect(screen.getByText('Idle 2')).toBeInTheDocument()
   })
 
-  it('should render completed tasks with section label', () => {
+  it('should render completed today tasks with section label', () => {
     const completedTodos = [
       makeTodo({ id: '1', title: 'Done 1', status: 'completed' }),
     ]
     renderWithTheme(
       <TaskList
-        inProgressTodo={null}
-        pendingTodos={[]}
-        completedTodos={completedTodos}
+        completedTodayTodos={completedTodos}
+        activeTodayTodos={[]}
+        idleTodos={[]}
         onToggleStatus={onToggleStatus}
       />,
     )
-    expect(screen.getByText('Completed')).toBeInTheDocument()
+    expect(screen.getByText('Completed Today')).toBeInTheDocument()
     expect(screen.getByText('Done 1')).toBeInTheDocument()
   })
 
-  it('should not render in-progress section when no task is in progress', () => {
+  it('should not render active section when no active tasks', () => {
     renderWithTheme(
       <TaskList
-        inProgressTodo={null}
-        pendingTodos={[makeTodo({ id: '1', title: 'Pending' })]}
-        completedTodos={[]}
+        completedTodayTodos={[]}
+        activeTodayTodos={[]}
+        idleTodos={[makeTodo({ id: '1', title: 'Idle' })]}
         onToggleStatus={onToggleStatus}
       />,
     )
-    expect(screen.queryByLabelText('In progress')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Active tasks')).not.toBeInTheDocument()
   })
 
   it('should display empty state message when no tasks exist', () => {
     renderWithTheme(
       <TaskList
-        inProgressTodo={null}
-        pendingTodos={[]}
-        completedTodos={[]}
+        completedTodayTodos={[]}
+        activeTodayTodos={[]}
+        idleTodos={[]}
         onToggleStatus={onToggleStatus}
       />,
     )

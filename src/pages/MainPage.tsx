@@ -55,7 +55,7 @@ interface MainPageProps {
 }
 
 export const MainPage = ({ onNavigateToHistory }: MainPageProps) => {
-  const { inProgressTodo, pendingTodos, completedTodos, addTodo, toggleStatus } =
+  const { completedTodayTodos, activeTodayTodos, idleTodos, addTodo, toggleStatus } =
     useTodos()
 
   return (
@@ -70,9 +70,9 @@ export const MainPage = ({ onNavigateToHistory }: MainPageProps) => {
         </HistoryButton>
       </Header>
       <TaskList
-        inProgressTodo={inProgressTodo}
-        pendingTodos={pendingTodos}
-        completedTodos={completedTodos}
+        completedTodayTodos={completedTodayTodos}
+        activeTodayTodos={activeTodayTodos}
+        idleTodos={idleTodos}
         onToggleStatus={toggleStatus}
       />
       <TaskInput onAddTodo={addTodo} />

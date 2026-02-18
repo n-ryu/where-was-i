@@ -3,9 +3,9 @@ import { fn } from 'storybook/test'
 import { TaskList } from './TaskList'
 import {
   makeTodo,
-  sampleInProgressTodo,
-  samplePendingTodos,
-  sampleCompletedTodos,
+  sampleActiveTodayTodos,
+  sampleIdleTodos,
+  sampleCompletedTodayTodos,
 } from '@/stories/mocks/todos'
 
 const meta = {
@@ -21,48 +21,57 @@ type Story = StoryObj<typeof meta>
 
 export const Empty: Story = {
   args: {
-    inProgressTodo: null,
-    pendingTodos: [],
-    completedTodos: [],
+    completedTodayTodos: [],
+    activeTodayTodos: [],
+    idleTodos: [],
   },
 }
 
-export const PendingOnly: Story = {
+export const IdleOnly: Story = {
   args: {
-    inProgressTodo: null,
-    pendingTodos: samplePendingTodos,
-    completedTodos: [],
+    completedTodayTodos: [],
+    activeTodayTodos: [],
+    idleTodos: sampleIdleTodos,
   },
 }
 
-export const WithInProgress: Story = {
+export const WithActive: Story = {
   args: {
-    inProgressTodo: sampleInProgressTodo,
-    pendingTodos: samplePendingTodos,
-    completedTodos: [],
+    completedTodayTodos: [],
+    activeTodayTodos: sampleActiveTodayTodos,
+    idleTodos: sampleIdleTodos,
   },
 }
 
 export const AllSections: Story = {
   args: {
-    inProgressTodo: sampleInProgressTodo,
-    pendingTodos: samplePendingTodos,
-    completedTodos: sampleCompletedTodos,
+    completedTodayTodos: sampleCompletedTodayTodos,
+    activeTodayTodos: sampleActiveTodayTodos,
+    idleTodos: sampleIdleTodos,
   },
 }
 
 export const ManyTasks: Story = {
   args: {
-    inProgressTodo: sampleInProgressTodo,
-    pendingTodos: Array.from({ length: 8 }, (_, i) =>
-      makeTodo({ id: `p-${i}`, title: `Pending task ${i + 1}` }),
-    ),
-    completedTodos: Array.from({ length: 5 }, (_, i) =>
+    completedTodayTodos: Array.from({ length: 3 }, (_, i) =>
       makeTodo({
         id: `c-${i}`,
         title: `Completed task ${i + 1}`,
         status: 'completed',
       }),
+    ),
+    activeTodayTodos: [
+      makeTodo({
+        id: 'active-ip',
+        title: 'Currently working on this',
+        status: 'in_progress',
+      }),
+      ...Array.from({ length: 3 }, (_, i) =>
+        makeTodo({ id: `a-${i}`, title: `Active task ${i + 1}` }),
+      ),
+    ],
+    idleTodos: Array.from({ length: 5 }, (_, i) =>
+      makeTodo({ id: `idle-${i}`, title: `Idle task ${i + 1}` }),
     ),
   },
 }
