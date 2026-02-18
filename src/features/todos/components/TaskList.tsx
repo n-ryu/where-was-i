@@ -1,7 +1,6 @@
 import styled, { keyframes } from 'styled-components'
 import type { Todo } from '@/db/schema'
 import type { TodoAction } from '../types'
-import { CompletedIcon, ActiveIcon, IdleIcon } from '@/components/StatusIcons'
 import { TaskItem } from './TaskItem'
 
 interface TaskListProps {
@@ -36,9 +35,7 @@ const ActiveSection = styled.section`
 `
 
 const SectionLabel = styled.span<{ $variant?: 'accent' | 'default' | 'muted' }>`
-  display: flex;
-  align-items: center;
-  gap: ${({ theme }) => theme.spacing.xs};
+  display: block;
   padding: ${({ theme }) => `${theme.spacing.xs} ${theme.spacing.md}`};
   font-size: 0.75rem;
   font-weight: 600;
@@ -119,10 +116,7 @@ export const TaskList = ({
     <ListContainer>
       {activeTodayTodos.length > 0 && (
         <ActiveSection aria-label="Active tasks">
-          <SectionLabel $variant="accent">
-            <ActiveIcon size={14} />
-            Active
-          </SectionLabel>
+          <SectionLabel $variant="accent">Active</SectionLabel>
           <TaskUl>
             {activeTodayTodos.map((todo) => (
               <TaskItem key={todo.id} todo={todo} onToggleStatus={onToggleStatus} />
@@ -132,10 +126,7 @@ export const TaskList = ({
       )}
       {idleTodos.length > 0 && (
         <Section aria-label="Idle tasks">
-          <SectionLabel $variant="default">
-            <IdleIcon size={14} />
-            Idle
-          </SectionLabel>
+          <SectionLabel $variant="default">Idle</SectionLabel>
           <TaskUl>
             {idleTodos.map((todo) => (
               <TaskItem key={todo.id} todo={todo} onToggleStatus={onToggleStatus} />
@@ -145,10 +136,7 @@ export const TaskList = ({
       )}
       {completedTodayTodos.length > 0 && (
         <Section aria-label="Completed tasks">
-          <SectionLabel $variant="muted">
-            <CompletedIcon size={14} />
-            Completed Today
-          </SectionLabel>
+          <SectionLabel $variant="muted">Completed Today</SectionLabel>
           <TaskUl>
             {completedTodayTodos.map((todo) => (
               <TaskItem key={todo.id} todo={todo} onToggleStatus={onToggleStatus} />
