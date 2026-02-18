@@ -8,6 +8,8 @@ interface TaskListProps {
   activeTodayTodos: Todo[]
   idleTodos: Todo[]
   onToggleStatus: (params: { id: string; action: TodoAction }) => void
+  onDelete: (id: string) => void
+  onUpdateTitle: (params: { id: string; title: string }) => void
 }
 
 const ListContainer = styled.div`
@@ -94,6 +96,8 @@ export const TaskList = ({
   activeTodayTodos,
   idleTodos,
   onToggleStatus,
+  onDelete,
+  onUpdateTitle,
 }: TaskListProps) => {
   const isEmpty =
     completedTodayTodos.length === 0 &&
@@ -119,7 +123,7 @@ export const TaskList = ({
           <SectionLabel $variant="accent">Active</SectionLabel>
           <TaskUl>
             {activeTodayTodos.map((todo) => (
-              <TaskItem key={todo.id} todo={todo} onToggleStatus={onToggleStatus} />
+              <TaskItem key={todo.id} todo={todo} onToggleStatus={onToggleStatus} onDelete={onDelete} onUpdateTitle={onUpdateTitle} />
             ))}
           </TaskUl>
         </ActiveSection>
@@ -129,7 +133,7 @@ export const TaskList = ({
           <SectionLabel $variant="default">Idle</SectionLabel>
           <TaskUl>
             {idleTodos.map((todo) => (
-              <TaskItem key={todo.id} todo={todo} onToggleStatus={onToggleStatus} />
+              <TaskItem key={todo.id} todo={todo} onToggleStatus={onToggleStatus} onDelete={onDelete} onUpdateTitle={onUpdateTitle} />
             ))}
           </TaskUl>
         </Section>
@@ -139,7 +143,7 @@ export const TaskList = ({
           <SectionLabel $variant="muted">Completed Today</SectionLabel>
           <TaskUl>
             {completedTodayTodos.map((todo) => (
-              <TaskItem key={todo.id} todo={todo} onToggleStatus={onToggleStatus} />
+              <TaskItem key={todo.id} todo={todo} onToggleStatus={onToggleStatus} onDelete={onDelete} onUpdateTitle={onUpdateTitle} />
             ))}
           </TaskUl>
         </Section>

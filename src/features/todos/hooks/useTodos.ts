@@ -8,6 +8,8 @@ import {
   loadTodayEventsAtom,
   addTodoAtom,
   toggleTodoStatusAtom,
+  deleteTodoAtom,
+  updateTodoTitleAtom,
 } from '@/stores/todoAtoms'
 
 export const useTodos = () => {
@@ -18,6 +20,8 @@ export const useTodos = () => {
   const loadTodayEvents = useSetAtom(loadTodayEventsAtom)
   const addTodo = useSetAtom(addTodoAtom)
   const toggleStatus = useSetAtom(toggleTodoStatusAtom)
+  const deleteTodo = useSetAtom(deleteTodoAtom)
+  const updateTodoTitle = useSetAtom(updateTodoTitleAtom)
 
   useEffect(() => {
     loadTodos()
@@ -30,5 +34,7 @@ export const useTodos = () => {
     idleTodos,
     addTodo,
     toggleStatus,
+    deleteTodo,
+    updateTodoTitle,
   }
 }

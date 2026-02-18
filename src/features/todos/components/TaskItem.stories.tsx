@@ -8,6 +8,8 @@ const meta = {
   component: TaskItem,
   args: {
     onToggleStatus: fn(),
+    onDelete: fn(),
+    onUpdateTitle: fn(),
   },
 } satisfies Meta<typeof TaskItem>
 

@@ -32,6 +32,8 @@ export const AllSections: Story = {
         activeTodayTodos={sampleActiveTodayTodos}
         idleTodos={sampleIdleTodos}
         onToggleStatus={fn()}
+        onDelete={fn()}
+        onUpdateTitle={fn()}
       />
       <TaskInput onAddTodo={fn()} />
     </PageContainer>
@@ -52,6 +54,8 @@ export const EmptyState: Story = {
         activeTodayTodos={[]}
         idleTodos={[]}
         onToggleStatus={fn()}
+        onDelete={fn()}
+        onUpdateTitle={fn()}
       />
       <TaskInput onAddTodo={fn()} />
     </PageContainer>
@@ -72,6 +76,8 @@ export const OnlyIdle: Story = {
         activeTodayTodos={[]}
         idleTodos={sampleIdleTodos}
         onToggleStatus={fn()}
+        onDelete={fn()}
+        onUpdateTitle={fn()}
       />
       <TaskInput onAddTodo={fn()} />
     </PageContainer>
@@ -103,6 +109,8 @@ export const ManyTasks: Story = {
           makeTodo({ id: `idle-${i}`, title: `Idle task ${i + 1}` }),
         )}
         onToggleStatus={fn()}
+        onDelete={fn()}
+        onUpdateTitle={fn()}
       />
       <TaskInput onAddTodo={fn()} />
     </PageContainer>

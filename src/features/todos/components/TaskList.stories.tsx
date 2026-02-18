@@ -13,6 +13,8 @@ const meta = {
   component: TaskList,
   args: {
     onToggleStatus: fn(),
+    onDelete: fn(),
+    onUpdateTitle: fn(),
   },
 } satisfies Meta<typeof TaskList>
 

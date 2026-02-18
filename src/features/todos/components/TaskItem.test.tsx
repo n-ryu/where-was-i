@@ -16,15 +16,19 @@ const makeTodo = (overrides?: Partial<Todo>): Todo => ({
 
 const renderTaskItem = (overrides?: Partial<TaskItemProps>) => {
   const onToggleStatus = vi.fn()
+  const onDelete = vi.fn()
+  const onUpdateTitle = vi.fn()
   const todo = overrides?.todo ?? makeTodo()
   renderWithTheme(
     <TaskItem
       todo={todo}
       onToggleStatus={onToggleStatus}
+      onDelete={onDelete}
+      onUpdateTitle={onUpdateTitle}
       {...overrides}
     />,
   )
-  return { onToggleStatus, todo }
+  return { onToggleStatus, onDelete, onUpdateTitle, todo }
 }
 
 describe('TaskItem', () => {

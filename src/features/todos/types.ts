@@ -5,6 +5,8 @@ export type TodoAction = 'start' | 'stop' | 'complete' | 'reopen'
 export interface TaskItemProps {
   todo: Todo
   onToggleStatus: (params: { id: string; action: TodoAction }) => void
+  onDelete: (id: string) => void
+  onUpdateTitle: (params: { id: string; title: string }) => void
 }
 
 export interface TaskInputProps {

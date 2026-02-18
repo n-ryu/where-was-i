@@ -11,6 +11,8 @@ const makeTodo = (overrides: Partial<Todo> & { id: string; title: string }): Tod
 })
 
 const onToggleStatus = vi.fn()
+const onDelete = vi.fn()
+const onUpdateTitle = vi.fn()
 
 describe('TaskList', () => {
   it('should render active tasks in a highlighted section', () => {
@@ -25,6 +27,8 @@ describe('TaskList', () => {
         activeTodayTodos={[activeTodo]}
         idleTodos={[]}
         onToggleStatus={onToggleStatus}
+        onDelete={onDelete}
+        onUpdateTitle={onUpdateTitle}
       />,
     )
     expect(screen.getByText('Working on this')).toBeInTheDocument()
@@ -42,6 +46,8 @@ describe('TaskList', () => {
         activeTodayTodos={[]}
         idleTodos={idleTodos}
         onToggleStatus={onToggleStatus}
+        onDelete={onDelete}
+        onUpdateTitle={onUpdateTitle}
       />,
     )
     expect(screen.getByText('Idle')).toBeInTheDocument()
@@ -59,6 +65,8 @@ describe('TaskList', () => {
         activeTodayTodos={[]}
         idleTodos={[]}
         onToggleStatus={onToggleStatus}
+        onDelete={onDelete}
+        onUpdateTitle={onUpdateTitle}
       />,
     )
     expect(screen.getByText('Completed Today')).toBeInTheDocument()
@@ -72,6 +80,8 @@ describe('TaskList', () => {
         activeTodayTodos={[]}
         idleTodos={[makeTodo({ id: '1', title: 'Idle' })]}
         onToggleStatus={onToggleStatus}
+        onDelete={onDelete}
+        onUpdateTitle={onUpdateTitle}
       />,
     )
     expect(screen.queryByLabelText('Active tasks')).not.toBeInTheDocument()
@@ -84,6 +94,8 @@ describe('TaskList', () => {
         activeTodayTodos={[]}
         idleTodos={[]}
         onToggleStatus={onToggleStatus}
+        onDelete={onDelete}
+        onUpdateTitle={onUpdateTitle}
       />,
     )
     expect(screen.getByText(/no tasks/i)).toBeInTheDocument()

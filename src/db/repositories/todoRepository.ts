@@ -104,3 +104,17 @@ export const reopenTodo = async (id: string): Promise<void> => {
     })
   })
 }
+
+export const deleteTodo = async (id: string): Promise<void> => {
+  await db.transaction('rw', [db.todos, db.todoHistory], async () => {
+    await db.todoHistory.where('todoId').equals(id).delete()
+    await db.todos.delete(id)
+  })
+}
+
+export const updateTodoTitle = async (
+  id: string,
+  title: string,
+): Promise<void> => {
+  await db.todos.update(id, { title, updatedAt: new Date() })
+}

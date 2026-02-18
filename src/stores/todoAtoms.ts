@@ -7,6 +7,8 @@ import {
   stopTodo as stopTodoInDb,
   completeTodo as completeTodoInDb,
   reopenTodo as reopenTodoInDb,
+  deleteTodo as deleteTodoFromDb,
+  updateTodoTitle as updateTodoTitleInDb,
 } from '@/db/repositories/todoRepository'
 import { getHistoryByDateRange } from '@/db/repositories/historyRepository'
 
@@ -116,5 +118,27 @@ export const toggleTodoStatusAtom = atom(
     const [todos, events] = await Promise.all([getAllTodos(), loadTodayEvents()])
     set(todosAtom, todos)
     set(todayEventsAtom, events)
+  },
+)
+
+export const deleteTodoAtom = atom(
+  null,
+  async (_get, set, id: string) => {
+    await deleteTodoFromDb(id)
+    const [todos, events] = await Promise.all([
+      getAllTodos(),
+      loadTodayEvents(),
+    ])
+    set(todosAtom, todos)
+    set(todayEventsAtom, events)
+  },
+)
+
+export const updateTodoTitleAtom = atom(
+  null,
+  async (_get, set, params: { id: string; title: string }) => {
+    await updateTodoTitleInDb(params.id, params.title)
+    const todos = await getAllTodos()
+    set(todosAtom, todos)
   },
 )
