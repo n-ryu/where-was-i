@@ -31,6 +31,10 @@ const TaskLabel = styled.div<{ $dayStatus: DayStatus }>`
   display: flex;
   align-items: center;
   gap: 4px;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: ${({ theme }) => theme.colors.background};
   border-right: 1px solid ${({ theme }) => theme.colors.border};
 
   ${({ $dayStatus, theme }) =>

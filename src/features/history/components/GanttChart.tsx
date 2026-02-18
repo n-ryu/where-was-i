@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import styled, { keyframes } from 'styled-components'
 import type { TimeBlock, TimeMarker } from '@/stores/historyAtoms'
 import type { Todo, TodoHistoryEvent } from '@/db/schema'
@@ -29,9 +29,22 @@ const ChartContainer = styled.div`
 `
 
 const ChartInner = styled.div`
+  position: relative;
   display: flex;
   flex-direction: column;
   min-width: fit-content;
+`
+
+const NowLine = styled.div<{ $left: number }>`
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: ${({ $left }) => $left}px;
+  width: 1.5px;
+  background: ${({ theme }) => theme.colors.primary};
+  opacity: 0.6;
+  z-index: 2;
+  pointer-events: none;
 `
 
 const TimeAxisRow = styled.div`
@@ -41,6 +54,10 @@ const TimeAxisRow = styled.div`
 const TimeAxisLabel = styled.div`
   flex-shrink: 0;
   width: 80px;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: ${({ theme }) => theme.colors.background};
   border-right: 1px solid ${({ theme }) => theme.colors.border};
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 `
@@ -59,12 +76,6 @@ const isSameDay = (a: Date, b: Date) =>
   a.getFullYear() === b.getFullYear() &&
   a.getMonth() === b.getMonth() &&
   a.getDate() === b.getDate()
-
-const getHoursFromMidnight = (date: Date, dayStart: Date): number => {
-  const midnight = new Date(dayStart)
-  midnight.setHours(0, 0, 0, 0)
-  return (date.getTime() - midnight.getTime()) / (1000 * 60 * 60)
-}
 
 const endOfDay = (date: Date): Date => {
   const end = new Date(date)
@@ -105,21 +116,8 @@ export const GanttChart = ({
 
   const { hourStart, hourEnd, taskGroups, markerGroups, allTodoIds, dayStatusMap } =
     useMemo(() => {
-      let minHour = 24
-      let maxHour = 0
-      let hasTimeData = false
-
       const blockGroups = new Map<string, TimeBlock[]>()
       for (const block of dayBlocks) {
-        hasTimeData = true
-        const startH = getHoursFromMidnight(block.startTime, selectedDate)
-        const endH = block.endTime
-          ? getHoursFromMidnight(block.endTime, selectedDate)
-          : getHoursFromMidnight(new Date(), selectedDate)
-
-        minHour = Math.min(minHour, startH)
-        maxHour = Math.max(maxHour, endH)
-
         const existing = blockGroups.get(block.todoId) ?? []
         existing.push(block)
         blockGroups.set(block.todoId, existing)
@@ -127,11 +125,6 @@ export const GanttChart = ({
 
       const mGroups = new Map<string, TimeMarker[]>()
       for (const marker of dayMarkers) {
-        hasTimeData = true
-        const h = getHoursFromMidnight(marker.timestamp, selectedDate)
-        minHour = Math.min(minHour, h)
-        maxHour = Math.max(maxHour, h)
-
         const existing = mGroups.get(marker.todoId) ?? []
         existing.push(marker)
         mGroups.set(marker.todoId, existing)
@@ -172,8 +165,8 @@ export const GanttChart = ({
         }
       }
 
-      const computedHourStart = hasTimeData ? Math.max(0, Math.floor(minHour) - 1) : 9
-      const computedHourEnd = hasTimeData ? Math.min(24, Math.ceil(maxHour) + 1) : 18
+      const computedHourStart = 0
+      const computedHourEnd = 24
 
       const allIds = [...Array.from(activeTodoIds), ...idleTodoIds]
       const statusOrder: Record<DayStatus, number> = {
@@ -196,13 +189,32 @@ export const GanttChart = ({
       }
     }, [dayBlocks, dayMarkers, dayEventsByTodo, todos, selectedDate])
 
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+
+    const now = new Date()
+    const currentHour = now.getHours() + now.getMinutes() / 60
+    const labelWidth = 80
+    const scrollTarget = currentHour * PIXELS_PER_HOUR + labelWidth - el.clientWidth / 2
+
+    el.scrollLeft = Math.max(0, scrollTarget)
+  }, [selectedDate])
+
+  const isToday = isSameDay(selectedDate, new Date())
+  const now = new Date()
+  const nowLeft = (now.getHours() + now.getMinutes() / 60) * PIXELS_PER_HOUR + 80
+
   if (allTodoIds.length === 0) {
     return <EmptyState>No activity on this day</EmptyState>
   }
 
   return (
-    <ChartContainer>
+    <ChartContainer ref={containerRef}>
       <ChartInner>
+        {isToday && <NowLine $left={nowLeft} />}
         <TimeAxisRow>
           <TimeAxisLabel />
           <GanttTimeAxis
