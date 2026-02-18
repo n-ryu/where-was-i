@@ -3,6 +3,8 @@ import { GanttChart } from './GanttChart'
 import {
   sampleTimeBlocks,
   sampleTimeMarkers,
+  sampleTodos,
+  sampleHistoryEvents,
   singleTaskBlocks,
   singleTaskMarkers,
   directCompletionMarkers,
@@ -17,6 +19,8 @@ const meta = {
   args: {
     selectedDate: sampleDate,
     timeMarkers: [],
+    todos: new Map(),
+    historyEvents: [],
   },
 } satisfies Meta<typeof GanttChart>
 
@@ -32,7 +36,12 @@ export const SingleTask: Story = {
 }
 
 export const MultipleTasks: Story = {
-  args: { timeBlocks: sampleTimeBlocks, timeMarkers: sampleTimeMarkers },
+  args: {
+    timeBlocks: sampleTimeBlocks,
+    timeMarkers: sampleTimeMarkers,
+    todos: sampleTodos,
+    historyEvents: sampleHistoryEvents,
+  },
 }
 
 export const DirectCompletion: Story = {

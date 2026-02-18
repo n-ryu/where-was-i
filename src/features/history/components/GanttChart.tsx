@@ -1,12 +1,17 @@
 import { useMemo } from 'react'
 import styled, { keyframes } from 'styled-components'
 import type { TimeBlock, TimeMarker } from '@/stores/historyAtoms'
+import type { Todo, TodoHistoryEvent } from '@/db/schema'
 import { GanttTimeAxis } from './GanttTimeAxis'
 import { GanttTaskRow } from './GanttTaskRow'
+
+export type DayStatus = 'completed_today' | 'active_today' | 'idle'
 
 interface GanttChartProps {
   timeBlocks: TimeBlock[]
   timeMarkers: TimeMarker[]
+  todos: Map<string, Todo>
+  historyEvents: TodoHistoryEvent[]
   selectedDate: Date
 }
 
@@ -61,9 +66,17 @@ const getHoursFromMidnight = (date: Date, dayStart: Date): number => {
   return (date.getTime() - midnight.getTime()) / (1000 * 60 * 60)
 }
 
+const endOfDay = (date: Date): Date => {
+  const end = new Date(date)
+  end.setHours(23, 59, 59, 999)
+  return end
+}
+
 export const GanttChart = ({
   timeBlocks,
   timeMarkers,
+  todos,
+  historyEvents,
   selectedDate,
 }: GanttChartProps) => {
   const dayBlocks = useMemo(() => {
@@ -78,58 +91,112 @@ export const GanttChart = ({
     return timeMarkers.filter((marker) => isSameDay(marker.timestamp, selectedDate))
   }, [timeMarkers, selectedDate])
 
-  const { hourStart, hourEnd, taskGroups, markerGroups, allTodoIds } = useMemo(() => {
-    if (dayBlocks.length === 0 && dayMarkers.length === 0) {
-      return {
-        hourStart: 9,
-        hourEnd: 18,
-        taskGroups: new Map<string, TimeBlock[]>(),
-        markerGroups: new Map<string, TimeMarker[]>(),
-        allTodoIds: [] as string[],
+  const dayEventsByTodo = useMemo(() => {
+    const map = new Map<string, TodoHistoryEvent[]>()
+    for (const event of historyEvents) {
+      if (isSameDay(event.timestamp, selectedDate)) {
+        const existing = map.get(event.todoId) ?? []
+        existing.push(event)
+        map.set(event.todoId, existing)
       }
     }
+    return map
+  }, [historyEvents, selectedDate])
 
-    let minHour = 24
-    let maxHour = 0
+  const { hourStart, hourEnd, taskGroups, markerGroups, allTodoIds, dayStatusMap } =
+    useMemo(() => {
+      let minHour = 24
+      let maxHour = 0
+      let hasTimeData = false
 
-    const blockGroups = new Map<string, TimeBlock[]>()
-    for (const block of dayBlocks) {
-      const startH = getHoursFromMidnight(block.startTime, selectedDate)
-      const endH = block.endTime
-        ? getHoursFromMidnight(block.endTime, selectedDate)
-        : getHoursFromMidnight(new Date(), selectedDate)
+      const blockGroups = new Map<string, TimeBlock[]>()
+      for (const block of dayBlocks) {
+        hasTimeData = true
+        const startH = getHoursFromMidnight(block.startTime, selectedDate)
+        const endH = block.endTime
+          ? getHoursFromMidnight(block.endTime, selectedDate)
+          : getHoursFromMidnight(new Date(), selectedDate)
 
-      minHour = Math.min(minHour, startH)
-      maxHour = Math.max(maxHour, endH)
+        minHour = Math.min(minHour, startH)
+        maxHour = Math.max(maxHour, endH)
 
-      const existing = blockGroups.get(block.todoId) ?? []
-      existing.push(block)
-      blockGroups.set(block.todoId, existing)
-    }
+        const existing = blockGroups.get(block.todoId) ?? []
+        existing.push(block)
+        blockGroups.set(block.todoId, existing)
+      }
 
-    const mGroups = new Map<string, TimeMarker[]>()
-    for (const marker of dayMarkers) {
-      const h = getHoursFromMidnight(marker.timestamp, selectedDate)
-      minHour = Math.min(minHour, h)
-      maxHour = Math.max(maxHour, h)
+      const mGroups = new Map<string, TimeMarker[]>()
+      for (const marker of dayMarkers) {
+        hasTimeData = true
+        const h = getHoursFromMidnight(marker.timestamp, selectedDate)
+        minHour = Math.min(minHour, h)
+        maxHour = Math.max(maxHour, h)
 
-      const existing = mGroups.get(marker.todoId) ?? []
-      existing.push(marker)
-      mGroups.set(marker.todoId, existing)
-    }
+        const existing = mGroups.get(marker.todoId) ?? []
+        existing.push(marker)
+        mGroups.set(marker.todoId, existing)
+      }
 
-    const todoIds = new Set([...blockGroups.keys(), ...mGroups.keys()])
+      const activeTodoIds = new Set([...blockGroups.keys(), ...mGroups.keys()])
+      const statusMap = new Map<string, DayStatus>()
 
-    return {
-      hourStart: Math.max(0, Math.floor(minHour) - 1),
-      hourEnd: Math.min(24, Math.ceil(maxHour) + 1),
-      taskGroups: blockGroups,
-      markerGroups: mGroups,
-      allTodoIds: Array.from(todoIds),
-    }
-  }, [dayBlocks, dayMarkers, selectedDate])
+      for (const todoId of activeTodoIds) {
+        const todo = todos.get(todoId)
+        const markers = mGroups.get(todoId) ?? []
+        const hasNonDimmedCompleted = markers.some(
+          (m) => m.eventType === 'completed' && !m.dimmed,
+        )
 
-  if (dayBlocks.length === 0 && dayMarkers.length === 0) {
+        if (todo?.status === 'completed' && hasNonDimmedCompleted) {
+          statusMap.set(todoId, 'completed_today')
+        } else {
+          statusMap.set(todoId, 'active_today')
+        }
+      }
+
+      const selectedDayEnd = endOfDay(selectedDate)
+      const idleTodoIds: string[] = []
+      for (const [todoId, todo] of todos) {
+        if (activeTodoIds.has(todoId)) continue
+        if (todo.status === 'completed') continue
+        if (todo.createdAt > selectedDayEnd) continue
+
+        const todayEvents = dayEventsByTodo.get(todoId) ?? []
+        const hasNonCreatedEvent = todayEvents.some((e) => e.eventType !== 'created')
+        if (hasNonCreatedEvent) {
+          activeTodoIds.add(todoId)
+          statusMap.set(todoId, 'active_today')
+        } else {
+          statusMap.set(todoId, 'idle')
+          idleTodoIds.push(todoId)
+        }
+      }
+
+      const computedHourStart = hasTimeData ? Math.max(0, Math.floor(minHour) - 1) : 9
+      const computedHourEnd = hasTimeData ? Math.min(24, Math.ceil(maxHour) + 1) : 18
+
+      const allIds = [...Array.from(activeTodoIds), ...idleTodoIds]
+      const statusOrder: Record<DayStatus, number> = {
+        completed_today: 0,
+        active_today: 1,
+        idle: 2,
+      }
+      allIds.sort(
+        (a, b) =>
+          statusOrder[statusMap.get(a) ?? 'idle'] - statusOrder[statusMap.get(b) ?? 'idle'],
+      )
+
+      return {
+        hourStart: computedHourStart,
+        hourEnd: computedHourEnd,
+        taskGroups: blockGroups,
+        markerGroups: mGroups,
+        allTodoIds: allIds,
+        dayStatusMap: statusMap,
+      }
+    }, [dayBlocks, dayMarkers, dayEventsByTodo, todos, selectedDate])
+
+  if (allTodoIds.length === 0) {
     return <EmptyState>No activity on this day</EmptyState>
   }
 
@@ -147,13 +214,17 @@ export const GanttChart = ({
         {allTodoIds.map((todoId) => {
           const blocks = taskGroups.get(todoId) ?? []
           const markers = markerGroups.get(todoId) ?? []
-          const title = blocks[0]?.todoTitle ?? markers[0]?.todoTitle ?? 'Unknown'
+          const todo = todos.get(todoId)
+          const title =
+            todo?.title ?? blocks[0]?.todoTitle ?? markers[0]?.todoTitle ?? 'Unknown'
+          const dayStatus = dayStatusMap.get(todoId) ?? 'idle'
           return (
             <GanttTaskRow
               key={todoId}
               todoTitle={title}
               blocks={blocks}
               markers={markers}
+              dayStatus={dayStatus}
               hourStart={hourStart}
               hourEnd={hourEnd}
               pixelsPerHour={PIXELS_PER_HOUR}

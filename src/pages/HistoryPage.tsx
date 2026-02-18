@@ -55,7 +55,8 @@ interface HistoryPageProps {
 }
 
 export const HistoryPage = ({ onNavigateBack }: HistoryPageProps) => {
-  const { timeBlocks, timeMarkers, selectedDate, setSelectedDate } = useHistory()
+  const { timeBlocks, timeMarkers, todoLookup, historyEvents, selectedDate, setSelectedDate } =
+    useHistory()
 
   return (
     <PageContainer>
@@ -66,7 +67,13 @@ export const HistoryPage = ({ onNavigateBack }: HistoryPageProps) => {
         <Title>History</Title>
       </Header>
       <DayPicker selectedDate={selectedDate} onDateChange={setSelectedDate} />
-      <GanttChart timeBlocks={timeBlocks} timeMarkers={timeMarkers} selectedDate={selectedDate} />
+      <GanttChart
+        timeBlocks={timeBlocks}
+        timeMarkers={timeMarkers}
+        todos={todoLookup}
+        historyEvents={historyEvents}
+        selectedDate={selectedDate}
+      />
     </PageContainer>
   )
 }

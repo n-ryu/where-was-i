@@ -10,6 +10,7 @@ const meta = {
     hourEnd: 18,
     pixelsPerHour: 60,
     dayStart: sampleDate,
+    dayStatus: 'active_today',
     markers: [],
   },
 } satisfies Meta<typeof GanttTaskRow>
