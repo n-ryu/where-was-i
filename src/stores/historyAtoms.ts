@@ -1,7 +1,14 @@
 import { atom } from 'jotai'
 import type { Todo, TodoHistoryEvent } from '@/db/schema'
-import { getAllHistory } from '@/db/repositories/historyRepository'
+import {
+  getAllHistory,
+  updateEventTimestamp,
+  updateCreatedEventTimestamp,
+  deleteSession,
+  deletePointEvent,
+} from '@/db/repositories/historyRepository'
 import { getAllTodos } from '@/db/repositories/todoRepository'
+import { sortEvents } from '@/utils/sessionUtils'
 
 export const historyEventsAtom = atom<TodoHistoryEvent[]>([])
 
@@ -38,9 +45,7 @@ export const timeBlocksAtom = atom<TimeBlock[]>((get) => {
   const events = get(historyEventsAtom)
   const todoLookup = get(todoLookupAtom)
 
-  const sorted = [...events].sort(
-    (a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
-  )
+  const sorted = sortEvents(events)
 
   const openStarts = new Map<string, TodoHistoryEvent>()
   const blocks: TimeBlock[] = []
@@ -86,9 +91,11 @@ export const timeMarkersAtom = atom<TimeMarker[]>((get) => {
   const events = get(historyEventsAtom)
   const todoLookup = get(todoLookupAtom)
 
-  const relevant = events
-    .filter((e) => e.eventType === 'completed' || e.eventType === 'reopened')
-    .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+  const relevant = sortEvents(
+    events.filter(
+      (e) => e.eventType === 'completed' || e.eventType === 'reopened',
+    ),
+  )
 
   const markers: TimeMarker[] = []
   const lastCompleted = new Map<string, number>()
@@ -123,3 +130,33 @@ export const timeMarkersAtom = atom<TimeMarker[]>((get) => {
 
   return markers.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
 })
+
+// --- Write atoms for editing ---
+
+export const updateEventTimeAtom = atom(
+  null,
+  async (_get, set, params: { eventId: string; todoId: string; eventType: string; newTimestamp: Date }) => {
+    if (params.eventType === 'created') {
+      await updateCreatedEventTimestamp(params.eventId, params.todoId, params.newTimestamp)
+    } else {
+      await updateEventTimestamp(params.eventId, params.newTimestamp)
+    }
+    const events = await getAllHistory()
+    set(historyEventsAtom, events)
+  },
+)
+
+export const deleteHistoryItemAtom = atom(
+  null,
+  async (_get, set, params: { todoId: string; startEventId: string; endEventId: string | null; isSession: boolean }) => {
+    if (params.isSession) {
+      await deleteSession(params.todoId, params.startEventId, params.endEventId)
+    } else {
+      await deletePointEvent(params.todoId, params.startEventId)
+    }
+    const events = await getAllHistory()
+    set(historyEventsAtom, events)
+    const todos = await getAllTodos()
+    set(todoLookupAtom, new Map(todos.map((t) => [t.id, t])))
+  },
+)
