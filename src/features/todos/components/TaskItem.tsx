@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import styled, { css, keyframes } from 'styled-components'
 import type { TaskItemProps } from '../types'
 import type { TodoStatus } from '@/db/schema'
+import type { Theme } from '@/styles/theme'
 import { useLongPress } from '@/hooks/useLongPress'
 import { ContextMenu } from './ContextMenu'
 
@@ -47,6 +48,18 @@ const ItemContainer = styled.li<{
     css`
       background: ${theme.colors.primary}11;
     `}
+`
+
+const CheckboxLabel = styled.label`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  ${({ theme }: { theme: Theme }) => `
+    padding: ${theme.spacing.sm};
+    margin: -${theme.spacing.sm};
+  `}
+  flex-shrink: 0;
+  cursor: pointer;
 `
 
 const Checkbox = styled.input`
@@ -198,12 +211,14 @@ export const TaskItem = ({
   if (isEditing) {
     return (
       <ItemContainer>
-        <Checkbox
-          type="checkbox"
-          checked={todo.status === 'completed'}
-          disabled
-          aria-label={`Mark ${todo.title} as ${todo.status === 'completed' ? 'incomplete' : 'complete'}`}
-        />
+        <CheckboxLabel>
+          <Checkbox
+            type="checkbox"
+            checked={todo.status === 'completed'}
+            disabled
+            aria-label={`Mark ${todo.title} as ${todo.status === 'completed' ? 'incomplete' : 'complete'}`}
+          />
+        </CheckboxLabel>
         <EditInput
           $status={todo.status}
           value={editValue}
@@ -224,12 +239,14 @@ export const TaskItem = ({
 
   return (
     <ItemContainer $pressing={isPressing} $highlighted={!!menuPos} {...longPressHandlers}>
-      <Checkbox
-        type="checkbox"
-        checked={todo.status === 'completed'}
-        onChange={handleCheckboxChange}
-        aria-label={`Mark ${todo.title} as ${todo.status === 'completed' ? 'incomplete' : 'complete'}`}
-      />
+      <CheckboxLabel>
+        <Checkbox
+          type="checkbox"
+          checked={todo.status === 'completed'}
+          onChange={handleCheckboxChange}
+          aria-label={`Mark ${todo.title} as ${todo.status === 'completed' ? 'incomplete' : 'complete'}`}
+        />
+      </CheckboxLabel>
       <Body
         $status={todo.status}
         onClick={handleBodyClick}
