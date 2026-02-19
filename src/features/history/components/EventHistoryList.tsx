@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import styled from 'styled-components'
 import type { Todo, TodoHistoryEvent, TodoHistoryEventType } from '@/db/schema'
+import { sortEvents } from '@/utils/sessionUtils'
 
 interface EventHistoryListProps {
   historyEvents: TodoHistoryEvent[]
@@ -146,7 +147,7 @@ export const EventHistoryList = ({
       ? dayEvents.filter((event) => event.todoId === selectedTodoId)
       : dayEvents
 
-    return [...filtered].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+    return sortEvents(filtered)
   }, [historyEvents, selectedDate, selectedTodoId])
 
   return (
