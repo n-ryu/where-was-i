@@ -1,7 +1,9 @@
+import { useCallback, useState } from 'react'
 import styled from 'styled-components'
 import { useHistory } from '@/features/history/hooks/useHistory'
 import { DayPicker } from '@/features/history/components/DayPicker'
 import { GanttChart } from '@/features/history/components/GanttChart'
+import { EventHistoryList } from '@/features/history/components/EventHistoryList'
 
 export const PageContainer = styled.div`
   max-width: ${({ theme }) => theme.layout.maxWidth};
@@ -14,6 +16,12 @@ export const PageContainer = styled.div`
   @media (min-width: 431px) {
     box-shadow: 0 0 24px rgba(0, 0, 0, 0.08);
   }
+`
+
+const ScrollableArea = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 `
 
 export const Header = styled.header`
@@ -57,6 +65,19 @@ interface HistoryPageProps {
 export const HistoryPage = ({ onNavigateBack }: HistoryPageProps) => {
   const { timeBlocks, timeMarkers, todoLookup, historyEvents, selectedDate, setSelectedDate } =
     useHistory()
+  const [selectedTodoId, setSelectedTodoId] = useState<string | null>(null)
+
+  const handleDateChange = useCallback(
+    (date: Date) => {
+      setSelectedDate(date)
+      setSelectedTodoId(null)
+    },
+    [setSelectedDate],
+  )
+
+  const handleSelectTodo = useCallback((todoId: string) => {
+    setSelectedTodoId((prev) => (prev === todoId ? null : todoId))
+  }, [])
 
   return (
     <PageContainer>
@@ -66,14 +87,25 @@ export const HistoryPage = ({ onNavigateBack }: HistoryPageProps) => {
         </BackButton>
         <Title>History</Title>
       </Header>
-      <DayPicker selectedDate={selectedDate} onDateChange={setSelectedDate} />
-      <GanttChart
-        timeBlocks={timeBlocks}
-        timeMarkers={timeMarkers}
-        todos={todoLookup}
-        historyEvents={historyEvents}
-        selectedDate={selectedDate}
-      />
+      <DayPicker selectedDate={selectedDate} onDateChange={handleDateChange} />
+      <ScrollableArea>
+        <GanttChart
+          timeBlocks={timeBlocks}
+          timeMarkers={timeMarkers}
+          todos={todoLookup}
+          historyEvents={historyEvents}
+          selectedDate={selectedDate}
+          selectedTodoId={selectedTodoId}
+          onSelectTodo={handleSelectTodo}
+        />
+        <EventHistoryList
+          historyEvents={historyEvents}
+          todos={todoLookup}
+          selectedDate={selectedDate}
+          selectedTodoId={selectedTodoId}
+          onClearFilter={() => setSelectedTodoId(null)}
+        />
+      </ScrollableArea>
     </PageContainer>
   )
 }

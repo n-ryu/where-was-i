@@ -13,6 +13,8 @@ interface GanttChartProps {
   todos: Map<string, Todo>
   historyEvents: TodoHistoryEvent[]
   selectedDate: Date
+  selectedTodoId: string | null
+  onSelectTodo: (todoId: string) => void
 }
 
 const PIXELS_PER_HOUR = 60
@@ -23,8 +25,8 @@ const fadeIn = keyframes`
 `
 
 const ChartContainer = styled.div`
-  flex: 1;
-  overflow: auto;
+  flex-shrink: 0;
+  overflow-x: auto;
   animation: ${fadeIn} 200ms ease-out;
 `
 
@@ -63,10 +65,10 @@ const TimeAxisLabel = styled.div`
 `
 
 const EmptyState = styled.div`
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 120px;
   color: ${({ theme }) => theme.colors.textSecondary};
   font-size: 0.875rem;
   animation: ${fadeIn} 300ms ease-out;
@@ -89,6 +91,8 @@ export const GanttChart = ({
   todos,
   historyEvents,
   selectedDate,
+  selectedTodoId,
+  onSelectTodo,
 }: GanttChartProps) => {
   const dayBlocks = useMemo(() => {
     return timeBlocks.filter((block) => {
@@ -233,10 +237,13 @@ export const GanttChart = ({
           return (
             <GanttTaskRow
               key={todoId}
+              todoId={todoId}
               todoTitle={title}
               blocks={blocks}
               markers={markers}
               dayStatus={dayStatus}
+              isSelected={selectedTodoId === todoId}
+              onSelect={onSelectTodo}
               hourStart={hourStart}
               hourEnd={hourEnd}
               pixelsPerHour={PIXELS_PER_HOUR}

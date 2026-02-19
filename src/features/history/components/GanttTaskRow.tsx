@@ -6,10 +6,13 @@ import { GanttTaskBar } from './GanttTaskBar'
 import { GanttEventMarker } from './GanttEventMarker'
 
 interface GanttTaskRowProps {
+  todoId: string
   todoTitle: string
   blocks: TimeBlock[]
   markers: TimeMarker[]
   dayStatus: DayStatus
+  isSelected: boolean
+  onSelect: (todoId: string) => void
   hourStart: number
   hourEnd: number
   pixelsPerHour: number
@@ -22,7 +25,7 @@ const Row = styled.div`
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 `
 
-const TaskLabel = styled.div<{ $dayStatus: DayStatus }>`
+const TaskLabel = styled.div<{ $dayStatus: DayStatus; $isSelected: boolean }>`
   flex-shrink: 0;
   width: 80px;
   padding: ${({ theme }) => `${theme.spacing.xs} ${theme.spacing.sm}`};
@@ -36,6 +39,8 @@ const TaskLabel = styled.div<{ $dayStatus: DayStatus }>`
   z-index: 1;
   background: ${({ theme }) => theme.colors.background};
   border-right: 1px solid ${({ theme }) => theme.colors.border};
+  cursor: pointer;
+  transition: background 150ms ease;
 
   ${({ $dayStatus, theme }) =>
     $dayStatus === 'completed_today' &&
@@ -54,6 +59,13 @@ const TaskLabel = styled.div<{ $dayStatus: DayStatus }>`
     $dayStatus === 'active_today' &&
     css`
       color: ${theme.colors.text};
+    `}
+
+  ${({ $isSelected, theme }) =>
+    $isSelected &&
+    css`
+      background: ${theme.colors.primary}11;
+      font-weight: 600;
     `}
 `
 
@@ -97,10 +109,13 @@ const HatchingFill = styled.div`
 `
 
 export const GanttTaskRow = ({
+  todoId,
   todoTitle,
   blocks,
   markers,
   dayStatus,
+  isSelected,
+  onSelect,
   hourStart,
   hourEnd,
   pixelsPerHour,
@@ -111,7 +126,12 @@ export const GanttTaskRow = ({
 
   return (
     <Row>
-      <TaskLabel $dayStatus={dayStatus} title={todoTitle}>
+      <TaskLabel
+        $dayStatus={dayStatus}
+        $isSelected={isSelected}
+        title={todoTitle}
+        onClick={() => onSelect(todoId)}
+      >
         <StatusIconWrapper>
           <Icon size={12} />
         </StatusIconWrapper>

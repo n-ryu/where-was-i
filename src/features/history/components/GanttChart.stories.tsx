@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import { fn } from 'storybook/test'
 import { GanttChart } from './GanttChart'
 import {
   sampleTimeBlocks,
@@ -21,6 +22,8 @@ const meta = {
     timeMarkers: [],
     todos: new Map(),
     historyEvents: [],
+    selectedTodoId: null,
+    onSelectTodo: fn(),
   },
 } satisfies Meta<typeof GanttChart>
 

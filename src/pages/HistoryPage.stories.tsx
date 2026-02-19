@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react'
 import { fn } from 'storybook/test'
 import { DayPicker } from '@/features/history/components/DayPicker'
 import { GanttChart } from '@/features/history/components/GanttChart'
+import { EventHistoryList } from '@/features/history/components/EventHistoryList'
 import { PageContainer, Header, BackButton, Title } from './HistoryPage'
 import {
   sampleTimeBlocks,
@@ -35,6 +36,15 @@ export const WithActivity: Story = {
         todos={sampleTodos}
         historyEvents={sampleHistoryEvents}
         selectedDate={sampleDate}
+        selectedTodoId={null}
+        onSelectTodo={fn()}
+      />
+      <EventHistoryList
+        historyEvents={sampleHistoryEvents}
+        todos={sampleTodos}
+        selectedDate={sampleDate}
+        selectedTodoId={null}
+        onClearFilter={fn()}
       />
     </PageContainer>
   ),
@@ -56,6 +66,15 @@ export const NoActivity: Story = {
         todos={new Map()}
         historyEvents={[]}
         selectedDate={sampleDate}
+        selectedTodoId={null}
+        onSelectTodo={fn()}
+      />
+      <EventHistoryList
+        historyEvents={[]}
+        todos={new Map()}
+        selectedDate={sampleDate}
+        selectedTodoId={null}
+        onClearFilter={fn()}
       />
     </PageContainer>
   ),

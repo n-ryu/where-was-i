@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import { fn } from 'storybook/test'
 import { GanttTaskRow } from './GanttTaskRow'
 import { makeTimeBlock, makeTimeMarker, sampleDate } from '@/stories/mocks/history'
 
@@ -6,11 +7,14 @@ const meta = {
   title: 'History/GanttTaskRow',
   component: GanttTaskRow,
   args: {
+    todoId: '1',
     hourStart: 8,
     hourEnd: 18,
     pixelsPerHour: 60,
     dayStart: sampleDate,
     dayStatus: 'active_today',
+    isSelected: false,
+    onSelect: fn(),
     markers: [],
   },
 } satisfies Meta<typeof GanttTaskRow>
