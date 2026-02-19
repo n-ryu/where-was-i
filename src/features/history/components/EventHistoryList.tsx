@@ -1,8 +1,18 @@
-import { useMemo } from 'react'
-import styled from 'styled-components'
+import { useCallback, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
+import styled, { keyframes } from 'styled-components'
+import { useSetAtom } from 'jotai'
 import type { Todo, TodoHistoryEvent, TodoHistoryEventType } from '@/db/schema'
-import { classifyEvents } from '@/utils/sessionUtils'
+import {
+  classifyEvents,
+  computeEditTimestamp,
+  getSessionEditableRange,
+  getPointEventEditableRange,
+} from '@/utils/sessionUtils'
 import type { HistoryItem, Session, PointEvent } from '@/utils/sessionUtils'
+import { updateEventTimeAtom } from '@/stores/historyAtoms'
+import { useLongPress } from '@/hooks/useLongPress'
+import { TimeEditDialog } from './TimeEditDialog'
 
 interface EventHistoryListProps {
   historyEvents: TodoHistoryEvent[]
@@ -37,6 +47,13 @@ const formatTime = (date: Date) => {
   const h = String(date.getHours()).padStart(2, '0')
   const m = String(date.getMinutes()).padStart(2, '0')
   return `${h}:${m}`
+}
+
+const formatTimeValue = (date: Date): string => formatTime(date)
+
+const timeToMinutes = (timeStr: string): number => {
+  const [h, m] = timeStr.split(':').map(Number)
+  return h * 60 + m
 }
 
 // --- Styled Components ---
@@ -92,6 +109,8 @@ const ItemRow = styled.li`
   align-items: center;
   gap: ${({ theme }) => theme.spacing.sm};
   padding: ${({ theme }) => `${theme.spacing.xs} 0`};
+  user-select: none;
+  -webkit-user-select: none;
 
   & + & {
     border-top: 1px solid ${({ theme }) => theme.colors.surface};
@@ -152,30 +171,73 @@ const EmptyMessage = styled.div`
   padding: ${({ theme }) => theme.spacing.lg} 0;
 `
 
+// --- Context Menu ---
+
+const menuEnter = keyframes`
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+`
+
+const MenuOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+`
+
+const Menu = styled.div`
+  position: fixed;
+  z-index: 101;
+  background: ${({ theme }) => theme.colors.background};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.radii.md};
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  min-width: 120px;
+  overflow: hidden;
+  animation: ${menuEnter} 150ms ease-out;
+`
+
+const MenuItem = styled.button<{ $danger?: boolean }>`
+  all: unset;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: ${({ theme }) => `${theme.spacing.sm} ${theme.spacing.md}`};
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: ${({ $danger }) => ($danger ? '#ef4444' : 'inherit')};
+  transition: background 100ms ease;
+
+  &:hover,
+  &:active {
+    background: ${({ theme }) => theme.colors.surface};
+  }
+`
+
 // --- Row Components ---
 
 const SessionRow = ({
   session,
   title,
+  onLongPress,
 }: {
   session: Session
   title: string
+  onLongPress: (pos: { x: number; y: number }) => void
 }) => {
+  const longPress = useLongPress({ onLongPress })
   const endType = session.endEvent?.eventType ?? null
-  const startColorKey = EVENT_TYPE_COLOR_KEYS['started']
-  const endColorKey = endType ? EVENT_TYPE_COLOR_KEYS[endType] : null
 
   return (
-    <ItemRow>
+    <ItemRow {...longPress}>
       <TimeLabel>{formatTime(session.startTime)}</TimeLabel>
-      <EventBadge $colorKey={startColorKey}>
+      <EventBadge $colorKey={EVENT_TYPE_COLOR_KEYS['started']}>
         {EVENT_TYPE_LABELS['started']}
       </EventBadge>
       <Arrow>→</Arrow>
       {session.endEvent ? (
         <>
           <TimeLabel>{formatTime(session.endTime!)}</TimeLabel>
-          <EventBadge $colorKey={endColorKey!}>
+          <EventBadge $colorKey={EVENT_TYPE_COLOR_KEYS[endType!]}>
             {EVENT_TYPE_LABELS[endType!]}
           </EventBadge>
         </>
@@ -190,15 +252,18 @@ const SessionRow = ({
 const PointEventRow = ({
   pointEvent,
   title,
+  onLongPress,
 }: {
   pointEvent: PointEvent
   title: string
+  onLongPress: (pos: { x: number; y: number }) => void
 }) => {
-  const colorKey = EVENT_TYPE_COLOR_KEYS[pointEvent.event.eventType]
+  const longPress = useLongPress({ onLongPress })
+
   return (
-    <ItemRow>
+    <ItemRow {...longPress}>
       <TimeLabel>{formatTime(pointEvent.timestamp)}</TimeLabel>
-      <EventBadge $colorKey={colorKey}>
+      <EventBadge $colorKey={EVENT_TYPE_COLOR_KEYS[pointEvent.event.eventType]}>
         {EVENT_TYPE_LABELS[pointEvent.event.eventType]}
       </EventBadge>
       <TodoTitle>{title}</TodoTitle>
@@ -213,16 +278,12 @@ const getItemKey = (item: HistoryItem): string =>
 
 const isItemInDay = (item: HistoryItem, date: Date): boolean => {
   if (item.type === 'session') {
-    // Show session if its start or end falls on this day
     if (isSameDay(item.startTime, date)) return true
     if (item.endTime && isSameDay(item.endTime, date)) return true
     return false
   }
   return isSameDay(item.timestamp, date)
 }
-
-const isItemForTodo = (item: HistoryItem, todoId: string): boolean =>
-  item.todoId === todoId
 
 // --- Main Component ---
 
@@ -233,15 +294,143 @@ export const EventHistoryList = ({
   selectedTodoId,
   onClearFilter,
 }: EventHistoryListProps) => {
+  const updateEventTime = useSetAtom(updateEventTimeAtom)
+
+  const allItems = useMemo(() => classifyEvents(historyEvents), [historyEvents])
+
   const items = useMemo(() => {
-    const allItems = classifyEvents(historyEvents)
-
     const dayItems = allItems.filter((item) => isItemInDay(item, selectedDate))
-
     return selectedTodoId
-      ? dayItems.filter((item) => isItemForTodo(item, selectedTodoId))
+      ? dayItems.filter((item) => item.todoId === selectedTodoId)
       : dayItems
-  }, [historyEvents, selectedDate, selectedTodoId])
+  }, [allItems, selectedDate, selectedTodoId])
+
+  // Context menu state
+  const [menuState, setMenuState] = useState<{
+    item: HistoryItem
+    position: { x: number; y: number }
+  } | null>(null)
+
+  // Edit dialog state
+  const [editItem, setEditItem] = useState<HistoryItem | null>(null)
+
+  const handleLongPress = useCallback(
+    (item: HistoryItem) => (pos: { x: number; y: number }) => {
+      setMenuState({ item, position: pos })
+    },
+    [],
+  )
+
+  const closeMenu = useCallback(() => setMenuState(null), [])
+
+  const handleEdit = useCallback(() => {
+    if (!menuState) return
+    setEditItem(menuState.item)
+    closeMenu()
+  }, [menuState, closeMenu])
+
+  const getEditableRange = useCallback(
+    (item: HistoryItem) => {
+      const todoEvents = historyEvents.filter((e) => e.todoId === item.todoId)
+      if (item.type === 'session') {
+        const range = getSessionEditableRange(todoEvents, item)
+        return {
+          startMin: formatTimeValue(range.startMin),
+          startMax: formatTimeValue(range.startMax),
+          endMin: formatTimeValue(range.endMin),
+          endMax: formatTimeValue(range.endMax),
+        }
+      }
+      const range = getPointEventEditableRange(todoEvents, item.event)
+      return {
+        startMin: formatTimeValue(range.min),
+        startMax: formatTimeValue(range.max),
+        endMin: '00:00',
+        endMax: '23:59',
+      }
+    },
+    [historyEvents],
+  )
+
+  const handleSave = useCallback(
+    async (startTime: string, endTime: string | null) => {
+      if (!editItem) return
+
+      if (editItem.type === 'session') {
+        const session = editItem as Session
+        const todoEvents = historyEvents.filter((e) => e.todoId === session.todoId)
+        const prevEvent = todoEvents.find(
+          (e) =>
+            e.timestamp.getTime() < session.startTime.getTime() &&
+            e.id !== session.startEvent.id,
+        )
+        const nextEvent = session.endEvent
+          ? todoEvents.find(
+              (e) =>
+                e.timestamp.getTime() > session.endTime!.getTime() &&
+                e.id !== session.endEvent!.id,
+            )
+          : null
+
+        const newStart = computeEditTimestamp(
+          timeToMinutes(startTime),
+          prevEvent?.timestamp ?? null,
+          session.endEvent ? null : null,
+          selectedDate,
+        )
+        const newEnd = endTime
+          ? computeEditTimestamp(
+              timeToMinutes(endTime),
+              null,
+              nextEvent?.timestamp ?? null,
+              selectedDate,
+            )
+          : null
+
+        await updateEventTime({
+          eventId: session.startEvent.id,
+          todoId: session.todoId,
+          eventType: 'started',
+          newTimestamp: newStart,
+        })
+        if (session.endEvent && newEnd) {
+          await updateEventTime({
+            eventId: session.endEvent.id,
+            todoId: session.todoId,
+            eventType: session.endEvent.eventType,
+            newTimestamp: newEnd,
+          })
+        }
+      } else {
+        const pe = editItem as PointEvent
+        const todoEvents = historyEvents.filter((e) => e.todoId === pe.todoId)
+        const sorted = [...todoEvents].sort(
+          (a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
+        )
+        const idx = sorted.findIndex((e) => e.id === pe.event.id)
+        const prev = idx > 0 ? sorted[idx - 1] : null
+        const next = idx < sorted.length - 1 ? sorted[idx + 1] : null
+
+        const newTimestamp = computeEditTimestamp(
+          timeToMinutes(startTime),
+          prev?.timestamp ?? null,
+          next?.timestamp ?? null,
+          selectedDate,
+        )
+        await updateEventTime({
+          eventId: pe.event.id,
+          todoId: pe.todoId,
+          eventType: pe.event.eventType,
+          newTimestamp,
+        })
+      }
+
+      setEditItem(null)
+    },
+    [editItem, historyEvents, selectedDate, updateEventTime],
+  )
+
+  const editRange = editItem ? getEditableRange(editItem) : null
 
   return (
     <SectionContainer>
@@ -256,15 +445,48 @@ export const EventHistoryList = ({
       ) : (
         <ItemList>
           {items.map((item) => {
-            const todoId = item.todoId
-            const title = todos.get(todoId)?.title ?? 'Unknown'
+            const title = todos.get(item.todoId)?.title ?? 'Unknown'
             return item.type === 'session' ? (
-              <SessionRow key={getItemKey(item)} session={item} title={title} />
+              <SessionRow
+                key={getItemKey(item)}
+                session={item}
+                title={title}
+                onLongPress={handleLongPress(item)}
+              />
             ) : (
-              <PointEventRow key={getItemKey(item)} pointEvent={item} title={title} />
+              <PointEventRow
+                key={getItemKey(item)}
+                pointEvent={item}
+                title={title}
+                onLongPress={handleLongPress(item)}
+              />
             )
           })}
         </ItemList>
+      )}
+
+      {menuState &&
+        createPortal(
+          <>
+            <MenuOverlay onClick={closeMenu} />
+            <Menu style={{ left: menuState.position.x, top: menuState.position.y }}>
+              <MenuItem onClick={handleEdit}>시간 수정</MenuItem>
+            </Menu>
+          </>,
+          document.body,
+        )}
+
+      {editItem && editRange && (
+        <TimeEditDialog
+          item={editItem}
+          todoTitle={todos.get(editItem.todoId)?.title ?? 'Unknown'}
+          startMin={editRange.startMin}
+          startMax={editRange.startMax}
+          endMin={editRange.endMin}
+          endMax={editRange.endMax}
+          onSave={handleSave}
+          onClose={() => setEditItem(null)}
+        />
       )}
     </SectionContainer>
   )

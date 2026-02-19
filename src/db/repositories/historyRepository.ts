@@ -1,6 +1,27 @@
 import { db } from '@/db/schema'
 import type { TodoHistoryEvent } from '@/db/schema'
 
+export const updateEventTimestamp = async (
+  eventId: string,
+  newTimestamp: Date,
+): Promise<void> => {
+  await db.todoHistory.update(eventId, { timestamp: newTimestamp })
+}
+
+export const updateCreatedEventTimestamp = async (
+  eventId: string,
+  todoId: string,
+  newTimestamp: Date,
+): Promise<void> => {
+  await db.transaction('rw', [db.todos, db.todoHistory], async () => {
+    await db.todoHistory.update(eventId, { timestamp: newTimestamp })
+    await db.todos.update(todoId, {
+      createdAt: newTimestamp,
+      updatedAt: new Date(),
+    })
+  })
+}
+
 export const addHistoryEvent = async (
   event: Omit<TodoHistoryEvent, 'id'>,
 ): Promise<string> => {

@@ -1,6 +1,10 @@
 import { atom } from 'jotai'
 import type { Todo, TodoHistoryEvent } from '@/db/schema'
-import { getAllHistory } from '@/db/repositories/historyRepository'
+import {
+  getAllHistory,
+  updateEventTimestamp,
+  updateCreatedEventTimestamp,
+} from '@/db/repositories/historyRepository'
 import { getAllTodos } from '@/db/repositories/todoRepository'
 import { sortEvents } from '@/utils/sessionUtils'
 
@@ -124,3 +128,18 @@ export const timeMarkersAtom = atom<TimeMarker[]>((get) => {
 
   return markers.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
 })
+
+// --- Write atoms for editing ---
+
+export const updateEventTimeAtom = atom(
+  null,
+  async (_get, set, params: { eventId: string; todoId: string; eventType: string; newTimestamp: Date }) => {
+    if (params.eventType === 'created') {
+      await updateCreatedEventTimestamp(params.eventId, params.todoId, params.newTimestamp)
+    } else {
+      await updateEventTimestamp(params.eventId, params.newTimestamp)
+    }
+    const events = await getAllHistory()
+    set(historyEventsAtom, events)
+  },
+)
