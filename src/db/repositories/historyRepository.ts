@@ -165,11 +165,10 @@ export const splitCrossDaySessions = async (): Promise<boolean> => {
     (i): i is Session => i.type === 'session',
   )
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const now = new Date()
 
   const crossDaySessions = sessions.filter((s) => {
-    const end = s.endTime ?? today
+    const end = s.endTime ?? now
     return !isSameDay(s.startTime, end)
   })
 
@@ -177,7 +176,7 @@ export const splitCrossDaySessions = async (): Promise<boolean> => {
 
   await db.transaction('rw', [db.todoHistory], async () => {
     for (const session of crossDaySessions) {
-      const endTime = session.endTime ?? today
+      const endTime = session.endTime ?? now
       await insertMidnightSplitEvents(session.todoId, session.startTime, endTime)
     }
   })
@@ -193,9 +192,7 @@ export const splitOngoingCrossDaySessions = async (): Promise<boolean> => {
 
   if (inProgressTodos.length === 0) return false
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
+  const now = new Date()
   let changed = false
 
   await db.transaction('rw', [db.todoHistory], async () => {
@@ -209,9 +206,9 @@ export const splitOngoingCrossDaySessions = async (): Promise<boolean> => {
         .reverse()
         .find((e) => e.eventType === 'started')
 
-      if (!lastStarted || isSameDay(lastStarted.timestamp, today)) continue
+      if (!lastStarted || isSameDay(lastStarted.timestamp, now)) continue
 
-      await insertMidnightSplitEvents(todo.id, lastStarted.timestamp, today)
+      await insertMidnightSplitEvents(todo.id, lastStarted.timestamp, now)
       changed = true
     }
   })
