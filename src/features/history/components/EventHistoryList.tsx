@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import styled, { keyframes } from 'styled-components'
+import styled, { css, keyframes } from 'styled-components'
 import { useSetAtom } from 'jotai'
 import type { Todo, TodoHistoryEvent, TodoHistoryEventType } from '@/db/schema'
 import {
@@ -106,17 +106,33 @@ const ItemList = styled.ul`
   padding: 0;
 `
 
-const ItemRow = styled.li`
+const ItemRow = styled.li<{ $pressing?: boolean; $highlighted?: boolean }>`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.spacing.sm};
   padding: ${({ theme }) => `${theme.spacing.xs} 0`};
-  user-select: none;
+  border-radius: ${({ theme }) => theme.radii.sm};
+  transition: background 150ms ease, transform 150ms ease;
+  -webkit-touch-callout: none;
   -webkit-user-select: none;
+  user-select: none;
 
   & + & {
     border-top: 1px solid ${({ theme }) => theme.colors.surface};
   }
+
+  ${({ $pressing, theme }) =>
+    $pressing &&
+    css`
+      background: ${theme.colors.surface};
+      transform: scale(0.97);
+    `}
+
+  ${({ $highlighted, theme }) =>
+    $highlighted &&
+    css`
+      background: ${theme.colors.primary}11;
+    `}
 `
 
 const TimeLabel = styled.span`
@@ -220,17 +236,19 @@ const MenuItem = styled.button<{ $danger?: boolean }>`
 const SessionRow = ({
   session,
   title,
+  highlighted,
   onLongPress,
 }: {
   session: Session
   title: string
+  highlighted: boolean
   onLongPress: (pos: { x: number; y: number }) => void
 }) => {
-  const longPress = useLongPress({ onLongPress })
+  const { isPressing, ...longPressHandlers } = useLongPress({ onLongPress })
   const endType = session.endEvent?.eventType ?? null
 
   return (
-    <ItemRow {...longPress}>
+    <ItemRow $pressing={isPressing} $highlighted={highlighted} {...longPressHandlers}>
       <TimeLabel>{formatTime(session.startTime)}</TimeLabel>
       <EventBadge $colorKey={EVENT_TYPE_COLOR_KEYS['started']}>
         {EVENT_TYPE_LABELS['started']}
@@ -254,16 +272,18 @@ const SessionRow = ({
 const PointEventRow = ({
   pointEvent,
   title,
+  highlighted,
   onLongPress,
 }: {
   pointEvent: PointEvent
   title: string
+  highlighted: boolean
   onLongPress: (pos: { x: number; y: number }) => void
 }) => {
-  const longPress = useLongPress({ onLongPress })
+  const { isPressing, ...longPressHandlers } = useLongPress({ onLongPress })
 
   return (
-    <ItemRow {...longPress}>
+    <ItemRow $pressing={isPressing} $highlighted={highlighted} {...longPressHandlers}>
       <TimeLabel>{formatTime(pointEvent.timestamp)}</TimeLabel>
       <EventBadge $colorKey={EVENT_TYPE_COLOR_KEYS[pointEvent.event.eventType]}>
         {EVENT_TYPE_LABELS[pointEvent.event.eventType]}
@@ -313,10 +333,34 @@ export const EventHistoryList = ({
   )
 
   // Context menu state
+  const menuRef = useRef<HTMLDivElement>(null)
+
   const [menuState, setMenuState] = useState<{
     item: HistoryItem
     position: { x: number; y: number }
   } | null>(null)
+
+  // Adjust menu position to stay within viewport
+  useEffect(() => {
+    const menu = menuRef.current
+    if (!menu || !menuState) return
+
+    const rect = menu.getBoundingClientRect()
+    const { innerWidth, innerHeight } = window
+
+    let x = menuState.position.x
+    let y = menuState.position.y
+
+    if (x + rect.width > innerWidth) {
+      x = innerWidth - rect.width - 8
+    }
+    if (y + rect.height > innerHeight) {
+      y = innerHeight - rect.height - 8
+    }
+
+    menu.style.left = `${x}px`
+    menu.style.top = `${y}px`
+  }, [menuState])
 
   // Edit dialog state
   const [editItem, setEditItem] = useState<HistoryItem | null>(null)
@@ -547,18 +591,22 @@ export const EventHistoryList = ({
         <ItemList>
           {items.map((item) => {
             const title = todos.get(item.todoId)?.title ?? 'Unknown'
+            const key = getItemKey(item)
+            const isHighlighted = menuState !== null && getItemKey(menuState.item) === key
             return item.type === 'session' ? (
               <SessionRow
-                key={getItemKey(item)}
+                key={key}
                 session={item}
                 title={title}
+                highlighted={isHighlighted}
                 onLongPress={handleLongPress(item)}
               />
             ) : (
               <PointEventRow
-                key={getItemKey(item)}
+                key={key}
                 pointEvent={item}
                 title={title}
+                highlighted={isHighlighted}
                 onLongPress={handleLongPress(item)}
               />
             )
@@ -570,7 +618,7 @@ export const EventHistoryList = ({
         createPortal(
           <>
             <MenuOverlay onClick={closeMenu} />
-            <Menu style={{ left: menuState.position.x, top: menuState.position.y }}>
+            <Menu ref={menuRef} style={{ left: menuState.position.x, top: menuState.position.y }}>
               <MenuItem onClick={handleEdit}>시간 수정</MenuItem>
             </Menu>
           </>,
