@@ -105,28 +105,28 @@ const ItemList = styled.ul`
   list-style: none;
   margin: 0;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.spacing.xs};
 `
 
-const ItemRow = styled.li<{ $pressing?: boolean; $highlighted?: boolean }>`
-  display: flex;
-  align-items: center;
-  gap: ${({ theme }) => theme.spacing.sm};
-  padding: ${({ theme }) => `${theme.spacing.xs} 0`};
-  border-radius: ${({ theme }) => theme.radii.sm};
-  transition: background 150ms ease, transform 150ms ease;
+const EventCard = styled.li<{ $pressing?: boolean; $highlighted?: boolean }>`
+  background: ${({ theme }) => theme.colors.background};
+  border: 1px solid ${({ theme }) => `${theme.colors.border}80`};
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => `${theme.spacing.xs} ${theme.spacing.sm}`};
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: background 150ms ease, transform 150ms ease, box-shadow 150ms ease;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
-
-  & + & {
-    border-top: 1px solid ${({ theme }) => theme.colors.surface};
-  }
 
   ${({ $pressing, theme }) =>
     $pressing &&
     css`
       background: ${theme.colors.surface};
       transform: scale(0.97);
+      box-shadow: 0 0 0 rgba(0, 0, 0, 0);
     `}
 
   ${({ $highlighted, theme }) =>
@@ -136,18 +136,46 @@ const ItemRow = styled.li<{ $pressing?: boolean; $highlighted?: boolean }>`
     `}
 `
 
+const EventCardRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.sm};
+  padding: 2px 0;
+`
+
+const SessionArrow = styled.div`
+  display: flex;
+  gap: ${({ theme }) => theme.spacing.sm};
+  height: 0;
+  overflow: visible;
+
+  &::before {
+    content: '';
+    flex-shrink: 0;
+    width: 40px;
+  }
+
+  &::after {
+    content: '⏷';
+    flex-shrink: 0;
+    width: 42px;
+    text-align: center;
+    font-size: 0.6rem;
+    line-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: ${({ theme }) => theme.colors.textSecondary};
+    opacity: 0.4;
+  }
+`
+
 const TimeLabel = styled.span`
   flex-shrink: 0;
   font-family: ${({ theme }) => theme.fonts.mono};
   font-size: 0.75rem;
   color: ${({ theme }) => theme.colors.textSecondary};
   width: 40px;
-`
-
-const Arrow = styled.span`
-  flex-shrink: 0;
-  font-size: 0.7rem;
-  color: ${({ theme }) => theme.colors.textSecondary};
 `
 
 const EventBadge = styled.span<{ $colorKey: string }>`
@@ -249,24 +277,27 @@ const SessionRow = ({
   const endType = session.endEvent?.eventType ?? null
 
   return (
-    <ItemRow $pressing={isPressing} $highlighted={highlighted} {...longPressHandlers}>
-      <TimeLabel>{formatTime(session.startTime)}</TimeLabel>
-      <EventBadge $colorKey={EVENT_TYPE_COLOR_KEYS['started']}>
-        {EVENT_TYPE_LABELS['started']}
-      </EventBadge>
-      <Arrow>→</Arrow>
-      {session.endEvent ? (
+    <EventCard $pressing={isPressing} $highlighted={highlighted} {...longPressHandlers}>
+      <EventCardRow>
+        <TimeLabel>{formatTime(session.startTime)}</TimeLabel>
+        <EventBadge $colorKey={EVENT_TYPE_COLOR_KEYS['started']}>
+          {EVENT_TYPE_LABELS['started']}
+        </EventBadge>
+        <TodoTitle>{title}</TodoTitle>
+        {!session.endEvent && <OngoingLabel>진행중</OngoingLabel>}
+      </EventCardRow>
+      {session.endEvent && (
         <>
-          <TimeLabel>{formatTime(session.endTime!)}</TimeLabel>
-          <EventBadge $colorKey={EVENT_TYPE_COLOR_KEYS[endType!]}>
-            {EVENT_TYPE_LABELS[endType!]}
-          </EventBadge>
+          <SessionArrow />
+          <EventCardRow>
+            <TimeLabel>{formatTime(session.endTime!)}</TimeLabel>
+            <EventBadge $colorKey={EVENT_TYPE_COLOR_KEYS[endType!]}>
+              {EVENT_TYPE_LABELS[endType!]}
+            </EventBadge>
+          </EventCardRow>
         </>
-      ) : (
-        <OngoingLabel>진행중</OngoingLabel>
       )}
-      <TodoTitle>{title}</TodoTitle>
-    </ItemRow>
+    </EventCard>
   )
 }
 
@@ -284,13 +315,15 @@ const PointEventRow = ({
   const { isPressing, ...longPressHandlers } = useLongPress({ onLongPress })
 
   return (
-    <ItemRow $pressing={isPressing} $highlighted={highlighted} {...longPressHandlers}>
-      <TimeLabel>{formatTime(pointEvent.timestamp)}</TimeLabel>
-      <EventBadge $colorKey={EVENT_TYPE_COLOR_KEYS[pointEvent.event.eventType]}>
-        {EVENT_TYPE_LABELS[pointEvent.event.eventType]}
-      </EventBadge>
-      <TodoTitle>{title}</TodoTitle>
-    </ItemRow>
+    <EventCard $pressing={isPressing} $highlighted={highlighted} {...longPressHandlers}>
+      <EventCardRow>
+        <TimeLabel>{formatTime(pointEvent.timestamp)}</TimeLabel>
+        <EventBadge $colorKey={EVENT_TYPE_COLOR_KEYS[pointEvent.event.eventType]}>
+          {EVENT_TYPE_LABELS[pointEvent.event.eventType]}
+        </EventBadge>
+        <TodoTitle>{title}</TodoTitle>
+      </EventCardRow>
+    </EventCard>
   )
 }
 
