@@ -4,6 +4,8 @@ import {
   getAllHistory,
   updateEventTimestamp,
   updateCreatedEventTimestamp,
+  deleteSession,
+  deletePointEvent,
 } from '@/db/repositories/historyRepository'
 import { getAllTodos } from '@/db/repositories/todoRepository'
 import { sortEvents } from '@/utils/sessionUtils'
@@ -141,5 +143,20 @@ export const updateEventTimeAtom = atom(
     }
     const events = await getAllHistory()
     set(historyEventsAtom, events)
+  },
+)
+
+export const deleteHistoryItemAtom = atom(
+  null,
+  async (_get, set, params: { todoId: string; startEventId: string; endEventId: string | null; isSession: boolean }) => {
+    if (params.isSession) {
+      await deleteSession(params.todoId, params.startEventId, params.endEventId)
+    } else {
+      await deletePointEvent(params.todoId, params.startEventId)
+    }
+    const events = await getAllHistory()
+    set(historyEventsAtom, events)
+    const todos = await getAllTodos()
+    set(todoLookupAtom, new Map(todos.map((t) => [t.id, t])))
   },
 )

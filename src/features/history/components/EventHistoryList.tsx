@@ -10,9 +10,11 @@ import {
   resolveConflicts,
   getSessionEditableRange,
   getPointEventEditableRange,
+  canDeleteSession,
+  canDeletePointEvent,
 } from '@/utils/sessionUtils'
 import type { HistoryItem, Session, PointEvent, SessionConflict } from '@/utils/sessionUtils'
-import { updateEventTimeAtom } from '@/stores/historyAtoms'
+import { updateEventTimeAtom, deleteHistoryItemAtom } from '@/stores/historyAtoms'
 import { useLongPress } from '@/hooks/useLongPress'
 import { TimeEditDialog } from './TimeEditDialog'
 
@@ -317,6 +319,7 @@ export const EventHistoryList = ({
   onClearFilter,
 }: EventHistoryListProps) => {
   const updateEventTime = useSetAtom(updateEventTimeAtom)
+  const deleteHistoryItem = useSetAtom(deleteHistoryItemAtom)
 
   const allItems = useMemo(() => classifyEvents(historyEvents), [historyEvents])
 
@@ -386,6 +389,46 @@ export const EventHistoryList = ({
     setPendingSave(null)
     closeMenu()
   }, [menuState, closeMenu])
+
+  const canDeleteItem = useCallback(
+    (item: HistoryItem): boolean => {
+      const todoEvents = historyEvents.filter((e) => e.todoId === item.todoId)
+      if (item.type === 'session') {
+        return canDeleteSession(todoEvents, item)
+      }
+      return canDeletePointEvent(todoEvents, item.event)
+    },
+    [historyEvents],
+  )
+
+  const handleDelete = useCallback(async () => {
+    if (!menuState) return
+    const item = menuState.item
+    closeMenu()
+
+    const label =
+      item.type === 'session'
+        ? `작업 세션 (${formatTime(item.startTime)}${item.endTime ? `–${formatTime(item.endTime)}` : ''})`
+        : `${EVENT_TYPE_LABELS[(item as PointEvent).event.eventType]} 이벤트 (${formatTime(item.timestamp)})`
+
+    if (!window.confirm(`${label}을(를) 삭제하시겠습니까?`)) return
+
+    if (item.type === 'session') {
+      await deleteHistoryItem({
+        todoId: item.todoId,
+        startEventId: item.startEvent.id,
+        endEventId: item.endEvent?.id ?? null,
+        isSession: true,
+      })
+    } else {
+      await deleteHistoryItem({
+        todoId: item.todoId,
+        startEventId: item.event.id,
+        endEventId: null,
+        isSession: false,
+      })
+    }
+  }, [menuState, closeMenu, deleteHistoryItem])
 
   const getEditableRange = useCallback(
     (item: HistoryItem) => {
@@ -620,6 +663,11 @@ export const EventHistoryList = ({
             <MenuOverlay onClick={closeMenu} />
             <Menu ref={menuRef} style={{ left: menuState.position.x, top: menuState.position.y }}>
               <MenuItem onClick={handleEdit}>시간 수정</MenuItem>
+              {canDeleteItem(menuState.item) && (
+                <MenuItem $danger onClick={handleDelete}>
+                  삭제
+                </MenuItem>
+              )}
             </Menu>
           </>,
           document.body,

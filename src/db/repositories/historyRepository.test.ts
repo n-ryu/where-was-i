@@ -4,6 +4,8 @@ import {
   getHistoryByTodoId,
   getAllHistory,
   getHistoryByDateRange,
+  deleteSession,
+  deletePointEvent,
 } from './historyRepository'
 
 beforeEach(async () => {
@@ -178,6 +180,222 @@ describe('historyRepository', () => {
       expect(events).toHaveLength(2)
       expect(events[0].eventType).toBe('created')
       expect(events[1].eventType).toBe('started')
+    })
+  })
+
+  describe('deleteSession', () => {
+    const setupTodo = async () => {
+      await db.todos.add({
+        id: baseTodoId,
+        title: 'Test',
+        status: 'pending',
+        createdAt: new Date('2026-01-01T09:00:00'),
+        updatedAt: new Date('2026-01-01T09:00:00'),
+      })
+    }
+
+    it('should delete a stopped session (started+stopped)', async () => {
+      await setupTodo()
+      await addHistoryEvent({
+        todoId: baseTodoId,
+        eventType: 'created',
+        fromStatus: null,
+        toStatus: 'pending',
+        timestamp: new Date('2026-01-01T09:00:00'),
+      })
+      const startId = await addHistoryEvent({
+        todoId: baseTodoId,
+        eventType: 'started',
+        fromStatus: 'pending',
+        toStatus: 'in_progress',
+        timestamp: new Date('2026-01-01T10:00:00'),
+      })
+      const stopId = await addHistoryEvent({
+        todoId: baseTodoId,
+        eventType: 'stopped',
+        fromStatus: 'in_progress',
+        toStatus: 'pending',
+        timestamp: new Date('2026-01-01T11:00:00'),
+      })
+
+      await deleteSession(baseTodoId, startId, stopId)
+
+      const events = await getHistoryByTodoId(baseTodoId)
+      expect(events).toHaveLength(1)
+      expect(events[0].eventType).toBe('created')
+    })
+
+    it('should rollback todo status when deleting last completed session', async () => {
+      await setupTodo()
+      await db.todos.update(baseTodoId, { status: 'completed' })
+
+      await addHistoryEvent({
+        todoId: baseTodoId,
+        eventType: 'created',
+        fromStatus: null,
+        toStatus: 'pending',
+        timestamp: new Date('2026-01-01T09:00:00'),
+      })
+      const startId = await addHistoryEvent({
+        todoId: baseTodoId,
+        eventType: 'started',
+        fromStatus: 'pending',
+        toStatus: 'in_progress',
+        timestamp: new Date('2026-01-01T10:00:00'),
+      })
+      const completeId = await addHistoryEvent({
+        todoId: baseTodoId,
+        eventType: 'completed',
+        fromStatus: 'in_progress',
+        toStatus: 'completed',
+        timestamp: new Date('2026-01-01T11:00:00'),
+      })
+
+      await deleteSession(baseTodoId, startId, completeId)
+
+      const todo = await db.todos.get(baseTodoId)
+      expect(todo!.status).toBe('pending')
+    })
+
+    it('should update fromStatus of the next event after deletion', async () => {
+      await setupTodo()
+      await addHistoryEvent({
+        todoId: baseTodoId,
+        eventType: 'created',
+        fromStatus: null,
+        toStatus: 'pending',
+        timestamp: new Date('2026-01-01T09:00:00'),
+      })
+      const startId = await addHistoryEvent({
+        todoId: baseTodoId,
+        eventType: 'started',
+        fromStatus: 'pending',
+        toStatus: 'in_progress',
+        timestamp: new Date('2026-01-01T10:00:00'),
+      })
+      const stopId = await addHistoryEvent({
+        todoId: baseTodoId,
+        eventType: 'stopped',
+        fromStatus: 'in_progress',
+        toStatus: 'pending',
+        timestamp: new Date('2026-01-01T11:00:00'),
+      })
+      await addHistoryEvent({
+        todoId: baseTodoId,
+        eventType: 'started',
+        fromStatus: 'pending',
+        toStatus: 'in_progress',
+        timestamp: new Date('2026-01-01T12:00:00'),
+      })
+
+      await deleteSession(baseTodoId, startId, stopId)
+
+      const events = await getHistoryByTodoId(baseTodoId)
+      expect(events).toHaveLength(2)
+      // The started event should now have fromStatus=pending (from created's toStatus)
+      expect(events[1].eventType).toBe('started')
+      expect(events[1].fromStatus).toBe('pending')
+    })
+
+    it('should delete an ongoing session (started only)', async () => {
+      await setupTodo()
+      await db.todos.update(baseTodoId, { status: 'in_progress' })
+
+      await addHistoryEvent({
+        todoId: baseTodoId,
+        eventType: 'created',
+        fromStatus: null,
+        toStatus: 'pending',
+        timestamp: new Date('2026-01-01T09:00:00'),
+      })
+      const startId = await addHistoryEvent({
+        todoId: baseTodoId,
+        eventType: 'started',
+        fromStatus: 'pending',
+        toStatus: 'in_progress',
+        timestamp: new Date('2026-01-01T10:00:00'),
+      })
+
+      await deleteSession(baseTodoId, startId, null)
+
+      const events = await getHistoryByTodoId(baseTodoId)
+      expect(events).toHaveLength(1)
+      const todo = await db.todos.get(baseTodoId)
+      expect(todo!.status).toBe('pending')
+    })
+  })
+
+  describe('deletePointEvent', () => {
+    const setupTodo = async () => {
+      await db.todos.add({
+        id: baseTodoId,
+        title: 'Test',
+        status: 'pending',
+        createdAt: new Date('2026-01-01T09:00:00'),
+        updatedAt: new Date('2026-01-01T09:00:00'),
+      })
+    }
+
+    it('should delete a completed-from-pending event and rollback todo status', async () => {
+      await setupTodo()
+      await db.todos.update(baseTodoId, { status: 'completed' })
+
+      await addHistoryEvent({
+        todoId: baseTodoId,
+        eventType: 'created',
+        fromStatus: null,
+        toStatus: 'pending',
+        timestamp: new Date('2026-01-01T09:00:00'),
+      })
+      const completeId = await addHistoryEvent({
+        todoId: baseTodoId,
+        eventType: 'completed',
+        fromStatus: 'pending',
+        toStatus: 'completed',
+        timestamp: new Date('2026-01-01T10:00:00'),
+      })
+
+      await deletePointEvent(baseTodoId, completeId)
+
+      const events = await getHistoryByTodoId(baseTodoId)
+      expect(events).toHaveLength(1)
+      expect(events[0].eventType).toBe('created')
+      const todo = await db.todos.get(baseTodoId)
+      expect(todo!.status).toBe('pending')
+    })
+
+    it('should delete a reopened event and rollback todo to completed', async () => {
+      await setupTodo()
+      await db.todos.update(baseTodoId, { status: 'pending' })
+
+      await addHistoryEvent({
+        todoId: baseTodoId,
+        eventType: 'created',
+        fromStatus: null,
+        toStatus: 'pending',
+        timestamp: new Date('2026-01-01T09:00:00'),
+      })
+      await addHistoryEvent({
+        todoId: baseTodoId,
+        eventType: 'completed',
+        fromStatus: 'pending',
+        toStatus: 'completed',
+        timestamp: new Date('2026-01-01T10:00:00'),
+      })
+      const reopenId = await addHistoryEvent({
+        todoId: baseTodoId,
+        eventType: 'reopened',
+        fromStatus: 'completed',
+        toStatus: 'pending',
+        timestamp: new Date('2026-01-01T11:00:00'),
+      })
+
+      await deletePointEvent(baseTodoId, reopenId)
+
+      const events = await getHistoryByTodoId(baseTodoId)
+      expect(events).toHaveLength(2)
+      const todo = await db.todos.get(baseTodoId)
+      expect(todo!.status).toBe('completed')
     })
   })
 })
