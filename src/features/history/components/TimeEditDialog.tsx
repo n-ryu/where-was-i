@@ -53,11 +53,11 @@ const Title = styled.h3`
   color: ${({ theme }) => theme.colors.text};
 `
 
-const TodoName = styled.span`
-  font-size: 0.85rem;
-  color: ${({ theme }) => theme.colors.textSecondary};
-  display: block;
-  margin-bottom: ${({ theme }) => theme.spacing.md};
+const TodoValue = styled.span`
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: ${({ theme }) => theme.colors.text};
+  line-height: 2;
 `
 
 const FieldRow = styled.div`
@@ -76,7 +76,8 @@ const Label = styled.label`
 
 const TimeInput = styled.input`
   font-family: ${({ theme }) => theme.fonts.mono};
-  font-size: 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
   padding: ${({ theme }) => `${theme.spacing.xs} ${theme.spacing.sm}`};
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.radii.sm};
@@ -202,7 +203,10 @@ export const TimeEditDialog = ({
     <Overlay onClick={onClose}>
       <Dialog onClick={(e) => e.stopPropagation()}>
         <Title>시간 수정</Title>
-        <TodoName>{todoTitle}</TodoName>
+        <FieldRow>
+          <Label>할 일</Label>
+          <TodoValue>{todoTitle}</TodoValue>
+        </FieldRow>
 
         {isSession ? (
           <>
