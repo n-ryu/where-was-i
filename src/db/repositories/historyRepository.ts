@@ -1,5 +1,12 @@
 import { db } from '@/db/schema'
 import type { TodoHistoryEvent } from '@/db/schema'
+import { classifyEvents } from '@/utils/sessionUtils'
+import type { Session } from '@/utils/sessionUtils'
+
+const isSameDay = (a: Date, b: Date) =>
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth() === b.getMonth() &&
+  a.getDate() === b.getDate()
 
 export const updateEventTimestamp = async (
   eventId: string,
@@ -114,4 +121,100 @@ export const getHistoryByDateRange = async (
     .where('timestamp')
     .between(startDate, endDate)
     .sortBy('timestamp')
+}
+
+const insertMidnightSplitEvents = async (
+  todoId: string,
+  startTime: Date,
+  endTime: Date,
+): Promise<void> => {
+  let current = new Date(startTime)
+
+  while (true) {
+    const nextMidnight = new Date(current)
+    nextMidnight.setDate(nextMidnight.getDate() + 1)
+    nextMidnight.setHours(0, 0, 0, 0)
+
+    if (nextMidnight >= endTime) break
+
+    await db.todoHistory.add({
+      id: crypto.randomUUID(),
+      todoId,
+      eventType: 'stopped',
+      fromStatus: 'in_progress',
+      toStatus: 'pending',
+      timestamp: new Date(nextMidnight.getTime() - 1),
+    })
+    await db.todoHistory.add({
+      id: crypto.randomUUID(),
+      todoId,
+      eventType: 'started',
+      fromStatus: 'pending',
+      toStatus: 'in_progress',
+      timestamp: nextMidnight,
+    })
+
+    current = nextMidnight
+  }
+}
+
+export const splitCrossDaySessions = async (): Promise<boolean> => {
+  const events = await db.todoHistory.orderBy('timestamp').toArray()
+  const items = classifyEvents(events)
+  const sessions = items.filter(
+    (i): i is Session => i.type === 'session',
+  )
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const crossDaySessions = sessions.filter((s) => {
+    const end = s.endTime ?? today
+    return !isSameDay(s.startTime, end)
+  })
+
+  if (crossDaySessions.length === 0) return false
+
+  await db.transaction('rw', [db.todoHistory], async () => {
+    for (const session of crossDaySessions) {
+      const endTime = session.endTime ?? today
+      await insertMidnightSplitEvents(session.todoId, session.startTime, endTime)
+    }
+  })
+
+  return true
+}
+
+export const splitOngoingCrossDaySessions = async (): Promise<boolean> => {
+  const inProgressTodos = await db.todos
+    .where('status')
+    .equals('in_progress')
+    .toArray()
+
+  if (inProgressTodos.length === 0) return false
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  let changed = false
+
+  await db.transaction('rw', [db.todoHistory], async () => {
+    for (const todo of inProgressTodos) {
+      const events = await db.todoHistory
+        .where('todoId')
+        .equals(todo.id)
+        .sortBy('timestamp')
+
+      const lastStarted = [...events]
+        .reverse()
+        .find((e) => e.eventType === 'started')
+
+      if (!lastStarted || isSameDay(lastStarted.timestamp, today)) continue
+
+      await insertMidnightSplitEvents(todo.id, lastStarted.timestamp, today)
+      changed = true
+    }
+  })
+
+  return changed
 }

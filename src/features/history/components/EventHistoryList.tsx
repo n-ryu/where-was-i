@@ -462,17 +462,26 @@ export const EventHistoryList = ({
       const todoEvents = historyEvents.filter((e) => e.todoId === item.todoId)
       if (item.type === 'session') {
         const range = getSessionEditableRange(todoEvents, item)
+        const endDate = item.endTime ?? new Date()
         return {
-          startMin: formatTimeValue(range.startMin),
+          startMin: isSameDay(range.startMin, item.startTime)
+            ? formatTimeValue(range.startMin)
+            : '00:00',
           startMax: formatTimeValue(range.startMax),
           endMin: formatTimeValue(range.endMin),
-          endMax: formatTimeValue(range.endMax),
+          endMax: isSameDay(range.endMax, endDate)
+            ? formatTimeValue(range.endMax)
+            : '23:59',
         }
       }
       const range = getPointEventEditableRange(todoEvents, item.event)
       return {
-        startMin: formatTimeValue(range.min),
-        startMax: formatTimeValue(range.max),
+        startMin: isSameDay(range.min, item.timestamp)
+          ? formatTimeValue(range.min)
+          : '00:00',
+        startMax: isSameDay(range.max, item.timestamp)
+          ? formatTimeValue(range.max)
+          : '23:59',
         endMin: '00:00',
         endMax: '23:59',
       }

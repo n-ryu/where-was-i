@@ -6,6 +6,7 @@ import {
   updateCreatedEventTimestamp,
   deleteSession,
   deletePointEvent,
+  splitCrossDaySessions,
 } from '@/db/repositories/historyRepository'
 import { getAllTodos } from '@/db/repositories/todoRepository'
 import { sortEvents } from '@/utils/sessionUtils'
@@ -13,6 +14,7 @@ import { sortEvents } from '@/utils/sessionUtils'
 export const historyEventsAtom = atom<TodoHistoryEvent[]>([])
 
 export const loadHistoryAtom = atom(null, async (_get, set) => {
+  await splitCrossDaySessions()
   const events = await getAllHistory()
   set(historyEventsAtom, events)
 })

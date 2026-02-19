@@ -10,7 +10,10 @@ import {
   deleteTodo as deleteTodoFromDb,
   updateTodoTitle as updateTodoTitleInDb,
 } from '@/db/repositories/todoRepository'
-import { getHistoryByDateRange } from '@/db/repositories/historyRepository'
+import {
+  getHistoryByDateRange,
+  splitOngoingCrossDaySessions,
+} from '@/db/repositories/historyRepository'
 
 export const todosAtom = atom<Todo[]>([])
 
@@ -47,6 +50,7 @@ const loadTodayEvents = async (): Promise<TodoHistoryEvent[]> => {
 }
 
 export const loadTodayEventsAtom = atom(null, async (_get, set) => {
+  await splitOngoingCrossDaySessions()
   const events = await loadTodayEvents()
   set(todayEventsAtom, events)
 })
