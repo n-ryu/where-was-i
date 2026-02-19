@@ -7,7 +7,6 @@ import {
   classifyEvents,
   computeEditTimestamp,
   detectSessionConflicts,
-  resolveConflicts,
   getSessionEditableRange,
   getPointEventEditableRange,
   canDeleteSession,
@@ -368,10 +367,6 @@ export const EventHistoryList = ({
   // Edit dialog state
   const [editItem, setEditItem] = useState<HistoryItem | null>(null)
   const [conflicts, setConflicts] = useState<SessionConflict[] | null>(null)
-  const [pendingSave, setPendingSave] = useState<{
-    startTime: string
-    endTime: string | null
-  } | null>(null)
 
   const handleLongPress = useCallback(
     (item: HistoryItem) => (pos: { x: number; y: number }) => {
@@ -386,7 +381,6 @@ export const EventHistoryList = ({
     if (!menuState) return
     setEditItem(menuState.item)
     setConflicts(null)
-    setPendingSave(null)
     closeMenu()
   }, [menuState, closeMenu])
 
@@ -482,11 +476,13 @@ export const EventHistoryList = ({
         const newEnd = endTime
           ? computeEditTimestamp(
               timeToMinutes(endTime),
-              null,
+              newStart,
               nextEvent?.timestamp ?? null,
               selectedDate,
             )
           : null
+
+        if (newEnd && newStart.getTime() > newEnd.getTime()) return
 
         // Check conflicts
         if (newEnd) {
@@ -498,7 +494,6 @@ export const EventHistoryList = ({
           )
           if (detected.length > 0) {
             setConflicts(detected)
-            setPendingSave({ startTime, endTime })
             return
           }
         }
@@ -543,80 +538,9 @@ export const EventHistoryList = ({
 
       setEditItem(null)
       setConflicts(null)
-      setPendingSave(null)
     },
     [editItem, historyEvents, selectedDate, allSessions, updateEventTime],
   )
-
-  const handleResolveConflicts = useCallback(async () => {
-    if (!editItem || editItem.type !== 'session' || !conflicts || !pendingSave) return
-    const session = editItem as Session
-
-    const todoEvents = historyEvents.filter((e) => e.todoId === session.todoId)
-    const prevEvent = todoEvents.find(
-      (e) =>
-        e.timestamp.getTime() < session.startTime.getTime() &&
-        e.id !== session.startEvent.id,
-    )
-    const nextEvent = session.endEvent
-      ? todoEvents.find(
-          (e) =>
-            e.timestamp.getTime() > session.endTime!.getTime() &&
-            e.id !== session.endEvent!.id,
-        )
-      : null
-
-    const newStart = computeEditTimestamp(
-      timeToMinutes(pendingSave.startTime),
-      prevEvent?.timestamp ?? null,
-      null,
-      selectedDate,
-    )
-    const newEnd = pendingSave.endTime
-      ? computeEditTimestamp(
-          timeToMinutes(pendingSave.endTime),
-          null,
-          nextEvent?.timestamp ?? null,
-          selectedDate,
-        )
-      : null
-
-    // Resolve conflicts
-    if (newEnd) {
-      const { updates } = resolveConflicts(
-        { startTime: newStart, endTime: newEnd },
-        conflicts,
-      )
-      for (const u of updates) {
-        await updateEventTime({
-          eventId: u.eventId,
-          todoId: '',
-          eventType: '',
-          newTimestamp: u.newTimestamp,
-        })
-      }
-    }
-
-    // Apply the main edit
-    await updateEventTime({
-      eventId: session.startEvent.id,
-      todoId: session.todoId,
-      eventType: 'started',
-      newTimestamp: newStart,
-    })
-    if (session.endEvent && newEnd) {
-      await updateEventTime({
-        eventId: session.endEvent.id,
-        todoId: session.todoId,
-        eventType: session.endEvent.eventType,
-        newTimestamp: newEnd,
-      })
-    }
-
-    setEditItem(null)
-    setConflicts(null)
-    setPendingSave(null)
-  }, [editItem, conflicts, pendingSave, historyEvents, selectedDate, updateEventTime])
 
   const editRange = editItem ? getEditableRange(editItem) : null
 
@@ -685,10 +609,8 @@ export const EventHistoryList = ({
           onClose={() => {
             setEditItem(null)
             setConflicts(null)
-            setPendingSave(null)
           }}
           conflicts={conflicts}
-          onResolveConflicts={handleResolveConflicts}
         />
       )}
     </SectionContainer>

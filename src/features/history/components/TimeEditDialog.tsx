@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import styled, { keyframes } from 'styled-components'
 import type { HistoryItem, Session, SessionConflict } from '@/utils/sessionUtils'
@@ -13,7 +13,6 @@ interface TimeEditDialogProps {
   onSave: (startTime: string, endTime: string | null) => void
   onClose: () => void
   conflicts: SessionConflict[] | null
-  onResolveConflicts: () => void
 }
 
 const fadeIn = keyframes`
@@ -114,28 +113,28 @@ const Button = styled.button<{ $primary?: boolean }>`
   &:active {
     opacity: 0.8;
   }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 `
 
-const ConflictBanner = styled.div`
-  background: ${({ theme }) => `${theme.colors.warning}18`};
-  border: 1px solid ${({ theme }) => `${theme.colors.warning}40`};
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm};
-  margin-top: ${({ theme }) => theme.spacing.sm};
+const ErrorMessage = styled.div`
   font-size: 0.8rem;
-  color: ${({ theme }) => theme.colors.text};
-`
-
-const ConflictActions = styled.div`
-  display: flex;
-  gap: ${({ theme }) => theme.spacing.sm};
-  margin-top: ${({ theme }) => theme.spacing.sm};
+  color: #ef4444;
+  margin-top: ${({ theme }) => theme.spacing.xs};
 `
 
 const formatTimeValue = (date: Date): string => {
   const h = String(date.getHours()).padStart(2, '0')
   const m = String(date.getMinutes()).padStart(2, '0')
   return `${h}:${m}`
+}
+
+const timeToMinutes = (timeStr: string): number => {
+  const [h, m] = timeStr.split(':').map(Number)
+  return h * 60 + m
 }
 
 export const TimeEditDialog = ({
@@ -148,7 +147,6 @@ export const TimeEditDialog = ({
   onSave,
   onClose,
   conflicts,
-  onResolveConflicts,
 }: TimeEditDialogProps) => {
   const isSession = item.type === 'session'
   const session = isSession ? (item as Session) : null
@@ -160,7 +158,43 @@ export const TimeEditDialog = ({
     session?.endTime ? formatTimeValue(session.endTime) : null,
   )
 
+  const [localConflicts, setLocalConflicts] = useState<SessionConflict[] | null>(null)
+
+  useEffect(() => {
+    setLocalConflicts(conflicts)
+  }, [conflicts])
+
+  const handleStartChange = (value: string) => {
+    setStartTime(value)
+    setLocalConflicts(null)
+  }
+
+  const handleEndChange = (value: string) => {
+    setEndTime(value)
+    setLocalConflicts(null)
+  }
+
+  const isInverted =
+    isSession && endTime !== null && timeToMinutes(startTime) > timeToMinutes(endTime)
+
+  const hasConflicts = localConflicts !== null && localConflicts.length > 0
+  const canSave = !isInverted && !hasConflicts
+
+  const effectiveStartMax =
+    isSession && endTime !== null
+      ? timeToMinutes(endTime) < timeToMinutes(startMax)
+        ? endTime
+        : startMax
+      : startMax
+
+  const effectiveEndMin = isSession
+    ? timeToMinutes(startTime) > timeToMinutes(endMin)
+      ? startTime
+      : endMin
+    : endMin
+
   const handleSave = () => {
+    if (!canSave) return
     onSave(startTime, endTime)
   }
 
@@ -178,8 +212,8 @@ export const TimeEditDialog = ({
                 type="time"
                 value={startTime}
                 min={startMin}
-                max={startMax}
-                onChange={(e) => setStartTime(e.target.value)}
+                max={effectiveStartMax}
+                onChange={(e) => handleStartChange(e.target.value)}
               />
             </FieldRow>
             {endTime !== null && (
@@ -188,9 +222,9 @@ export const TimeEditDialog = ({
                 <TimeInput
                   type="time"
                   value={endTime}
-                  min={endMin}
+                  min={effectiveEndMin}
                   max={endMax}
-                  onChange={(e) => setEndTime(e.target.value)}
+                  onChange={(e) => handleEndChange(e.target.value)}
                 />
               </FieldRow>
             )}
@@ -203,29 +237,27 @@ export const TimeEditDialog = ({
               value={startTime}
               min={startMin}
               max={startMax}
-              onChange={(e) => setStartTime(e.target.value)}
+              onChange={(e) => handleStartChange(e.target.value)}
             />
           </FieldRow>
         )}
 
-        {conflicts && conflicts.length > 0 && (
-          <ConflictBanner>
-            다른 투두의 세션 {conflicts.length}개와 겹칩니다.
-            <ConflictActions>
-              <Button onClick={onResolveConflicts}>다른 세션 조정</Button>
-              <Button onClick={onClose}>취소</Button>
-            </ConflictActions>
-          </ConflictBanner>
+        {isInverted && (
+          <ErrorMessage>시작 시간이 종료 시간보다 늦을 수 없습니다.</ErrorMessage>
         )}
 
-        {(!conflicts || conflicts.length === 0) && (
-          <ButtonRow>
-            <Button onClick={onClose}>취소</Button>
-            <Button $primary onClick={handleSave}>
-              저장
-            </Button>
-          </ButtonRow>
+        {hasConflicts && (
+          <ErrorMessage>
+            다른 세션과 시간이 겹칩니다. 시간을 조정해주세요.
+          </ErrorMessage>
         )}
+
+        <ButtonRow>
+          <Button onClick={onClose}>취소</Button>
+          <Button $primary onClick={handleSave} disabled={!canSave}>
+            저장
+          </Button>
+        </ButtonRow>
       </Dialog>
     </Overlay>,
     document.body,
