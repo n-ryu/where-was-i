@@ -88,6 +88,23 @@ export const ActiveIcon = ({ size = 14 }: IconProps) => {
   )
 }
 
+export const InProgressIcon = ({ size = 14 }: IconProps) => {
+  const theme = useTheme()
+  const color = theme.colors.primary
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle cx="8" cy="8" r="7" stroke={color} strokeWidth="1.5" />
+      <polygon points="6.5,4.5 6.5,11.5 12,8" fill={color} />
+    </svg>
+  )
+}
+
 export const IdleIcon = ({ size = 14 }: IconProps) => {
   const theme = useTheme()
   const color = theme.colors.textSecondary

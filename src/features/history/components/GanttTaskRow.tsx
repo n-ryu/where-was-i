@@ -1,7 +1,7 @@
 import styled, { css } from 'styled-components'
 import type { TimeBlock, TimeMarker } from '@/stores/historyAtoms'
 import type { DayStatus } from './GanttChart'
-import { CompletedIcon, ActiveIcon, IdleIcon } from '@/components/StatusIcons'
+import { CompletedIcon, ActiveIcon, InProgressIcon, IdleIcon } from '@/components/StatusIcons'
 import { GanttTaskBar } from './GanttTaskBar'
 import { GanttEventMarker } from './GanttEventMarker'
 
@@ -56,7 +56,7 @@ const TaskLabel = styled.div<{ $dayStatus: DayStatus; $isSelected: boolean }>`
     `}
 
   ${({ $dayStatus, theme }) =>
-    $dayStatus === 'active_today' &&
+    ($dayStatus === 'active_today' || $dayStatus === 'in_progress') &&
     css`
       color: ${theme.colors.text};
     `}
@@ -89,6 +89,7 @@ const StatusIconWrapper = styled.span`
 
 const statusIconMap: Record<DayStatus, React.FC<{ size?: number }>> = {
   completed_today: CompletedIcon,
+  in_progress: InProgressIcon,
   active_today: ActiveIcon,
   idle: IdleIcon,
 }

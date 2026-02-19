@@ -5,7 +5,7 @@ import type { Todo, TodoHistoryEvent } from '@/db/schema'
 import { GanttTimeAxis } from './GanttTimeAxis'
 import { GanttTaskRow } from './GanttTaskRow'
 
-export type DayStatus = 'completed_today' | 'active_today' | 'idle'
+export type DayStatus = 'completed_today' | 'in_progress' | 'active_today' | 'idle'
 
 interface GanttChartProps {
   timeBlocks: TimeBlock[]
@@ -143,9 +143,14 @@ export const GanttChart = ({
         const hasNonDimmedCompleted = markers.some(
           (m) => m.eventType === 'completed' && !m.dimmed,
         )
+        const hasOngoingBlock = (blockGroups.get(todoId) ?? []).some(
+          (b) => b.endReason === 'ongoing',
+        )
 
         if (todo?.status === 'completed' && hasNonDimmedCompleted) {
           statusMap.set(todoId, 'completed_today')
+        } else if (hasOngoingBlock) {
+          statusMap.set(todoId, 'in_progress')
         } else {
           statusMap.set(todoId, 'active_today')
         }
@@ -175,8 +180,9 @@ export const GanttChart = ({
       const allIds = [...Array.from(activeTodoIds), ...idleTodoIds]
       const statusOrder: Record<DayStatus, number> = {
         completed_today: 0,
-        active_today: 1,
-        idle: 2,
+        in_progress: 1,
+        active_today: 2,
+        idle: 3,
       }
       allIds.sort(
         (a, b) =>
