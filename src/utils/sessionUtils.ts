@@ -235,6 +235,117 @@ export const getPointEventEditableRange = (
 
 // --- Timestamp computation ---
 
+// --- Conflict detection ---
+
+export interface SessionConflict {
+  conflictingSession: Session
+  overlapType: 'start' | 'end' | 'contained' | 'contains'
+}
+
+export const detectSessionConflicts = (
+  editedSession: { todoId: string; startTime: Date; endTime: Date },
+  allSessions: Session[],
+): SessionConflict[] => {
+  const conflicts: SessionConflict[] = []
+  const s1 = editedSession.startTime.getTime()
+  const e1 = editedSession.endTime.getTime()
+
+  for (const other of allSessions) {
+    if (other.todoId === editedSession.todoId) continue
+    if (other.endTime === null) continue
+    const s2 = other.startTime.getTime()
+    const e2 = other.endTime.getTime()
+
+    if (s1 < e2 && e1 > s2) {
+      let overlapType: SessionConflict['overlapType']
+      if (s2 >= s1 && e2 <= e1) overlapType = 'contained'
+      else if (s2 < s1 && e2 > e1) overlapType = 'contains'
+      else if (s2 < s1) overlapType = 'start'
+      else overlapType = 'end'
+      conflicts.push({ conflictingSession: other, overlapType })
+    }
+  }
+  return conflicts
+}
+
+export interface ConflictResolution {
+  eventId: string
+  newTimestamp: Date
+}
+
+export const resolveConflicts = (
+  editedSession: { startTime: Date; endTime: Date },
+  conflicts: SessionConflict[],
+): { updates: ConflictResolution[]; deletes: string[] } => {
+  const updates: ConflictResolution[] = []
+  const deletes: string[] = []
+
+  for (const { conflictingSession: cs, overlapType } of conflicts) {
+    switch (overlapType) {
+      case 'end':
+        // Other session starts within our range → trim its start
+        updates.push({
+          eventId: cs.startEvent.id,
+          newTimestamp: editedSession.endTime,
+        })
+        break
+      case 'start':
+        // Other session ends within our range → trim its end
+        if (cs.endEvent) {
+          updates.push({
+            eventId: cs.endEvent.id,
+            newTimestamp: editedSession.startTime,
+          })
+        }
+        break
+      case 'contained':
+        // Other session fully inside → delete both events
+        deletes.push(cs.startEvent.id)
+        if (cs.endEvent) deletes.push(cs.endEvent.id)
+        break
+      case 'contains':
+        // Our session inside other → trim other's end
+        if (cs.endEvent) {
+          updates.push({
+            eventId: cs.endEvent.id,
+            newTimestamp: editedSession.startTime,
+          })
+        }
+        break
+    }
+  }
+
+  // Filter out updates where trimming would make duration <= 0
+  const validUpdates = updates.filter((u) => {
+    const cs = conflicts.find(
+      (c) =>
+        c.conflictingSession.startEvent.id === u.eventId ||
+        c.conflictingSession.endEvent?.id === u.eventId,
+    )
+    if (!cs) return true
+    const session = cs.conflictingSession
+    const newStart =
+      u.eventId === session.startEvent.id
+        ? u.newTimestamp
+        : session.startTime
+    const newEnd =
+      u.eventId === session.endEvent?.id
+        ? u.newTimestamp
+        : session.endTime
+    if (newEnd && newStart.getTime() >= newEnd.getTime()) {
+      // Duration <= 0, should delete instead
+      deletes.push(session.startEvent.id)
+      if (session.endEvent) deletes.push(session.endEvent.id)
+      return false
+    }
+    return true
+  })
+
+  return { updates: validUpdates, deletes: [...new Set(deletes)] }
+}
+
+// --- Timestamp computation ---
+
 const getMinuteValue = (date: Date): number =>
   date.getHours() * 60 + date.getMinutes()
 

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import styled, { keyframes } from 'styled-components'
-import type { HistoryItem, Session } from '@/utils/sessionUtils'
+import type { HistoryItem, Session, SessionConflict } from '@/utils/sessionUtils'
 
 interface TimeEditDialogProps {
   item: HistoryItem
@@ -12,6 +12,8 @@ interface TimeEditDialogProps {
   endMax: string
   onSave: (startTime: string, endTime: string | null) => void
   onClose: () => void
+  conflicts: SessionConflict[] | null
+  onResolveConflicts: () => void
 }
 
 const fadeIn = keyframes`
@@ -114,6 +116,22 @@ const Button = styled.button<{ $primary?: boolean }>`
   }
 `
 
+const ConflictBanner = styled.div`
+  background: ${({ theme }) => `${theme.colors.warning}18`};
+  border: 1px solid ${({ theme }) => `${theme.colors.warning}40`};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  padding: ${({ theme }) => theme.spacing.sm};
+  margin-top: ${({ theme }) => theme.spacing.sm};
+  font-size: 0.8rem;
+  color: ${({ theme }) => theme.colors.text};
+`
+
+const ConflictActions = styled.div`
+  display: flex;
+  gap: ${({ theme }) => theme.spacing.sm};
+  margin-top: ${({ theme }) => theme.spacing.sm};
+`
+
 const formatTimeValue = (date: Date): string => {
   const h = String(date.getHours()).padStart(2, '0')
   const m = String(date.getMinutes()).padStart(2, '0')
@@ -129,6 +147,8 @@ export const TimeEditDialog = ({
   endMax,
   onSave,
   onClose,
+  conflicts,
+  onResolveConflicts,
 }: TimeEditDialogProps) => {
   const isSession = item.type === 'session'
   const session = isSession ? (item as Session) : null
@@ -188,12 +208,24 @@ export const TimeEditDialog = ({
           </FieldRow>
         )}
 
-        <ButtonRow>
-          <Button onClick={onClose}>취소</Button>
-          <Button $primary onClick={handleSave}>
-            저장
-          </Button>
-        </ButtonRow>
+        {conflicts && conflicts.length > 0 && (
+          <ConflictBanner>
+            다른 투두의 세션 {conflicts.length}개와 겹칩니다.
+            <ConflictActions>
+              <Button onClick={onResolveConflicts}>다른 세션 조정</Button>
+              <Button onClick={onClose}>취소</Button>
+            </ConflictActions>
+          </ConflictBanner>
+        )}
+
+        {(!conflicts || conflicts.length === 0) && (
+          <ButtonRow>
+            <Button onClick={onClose}>취소</Button>
+            <Button $primary onClick={handleSave}>
+              저장
+            </Button>
+          </ButtonRow>
+        )}
       </Dialog>
     </Overlay>,
     document.body,
