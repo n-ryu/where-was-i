@@ -2,6 +2,7 @@ import styled from 'styled-components'
 import { useTodos } from '@/features/todos/hooks/useTodos'
 import { TaskList } from '@/features/todos/components/TaskList'
 import { TaskInput } from '@/features/todos/components/TaskInput'
+import logoSrc from '@/assets/logo.png'
 
 export const PageContainer = styled.div`
   max-width: ${({ theme }) => theme.layout.maxWidth};
@@ -21,7 +22,12 @@ export const Header = styled.header`
   padding: ${({ theme }) => `${theme.spacing.xs} ${theme.spacing.md}`};
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: ${({ theme }) => theme.spacing.xs};
+`
+
+const LogoImage = styled.img`
+  width: 24px;
+  height: 24px;
 `
 
 export const Title = styled.h1`
@@ -31,6 +37,7 @@ export const Title = styled.h1`
 `
 
 export const HistoryButton = styled.button`
+  margin-left: auto;
   background: none;
   border: none;
   padding: ${({ theme }) => theme.spacing.sm};
@@ -68,6 +75,7 @@ export const MainPage = ({ onNavigateToHistory }: MainPageProps) => {
   return (
     <PageContainer>
       <Header>
+        <LogoImage src={logoSrc} alt="where was i logo" />
         <Title>where was i</Title>
         <HistoryButton
           onClick={onNavigateToHistory}
