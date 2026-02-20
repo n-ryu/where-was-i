@@ -393,6 +393,7 @@ Error generating stack: `+a.message+`
   z-index: 3;
   background: ${({theme:l})=>l.colors.background};
   border-right: 1px solid ${({theme:l})=>l.colors.border};
+  box-shadow: 0 1px 0 ${({theme:l})=>l.colors.border};
   cursor: pointer;
   transition: background 150ms ease;
 
@@ -409,7 +410,7 @@ Error generating stack: `+a.message+`
     `}
 
   ${({$isSelected:l,theme:c})=>l&&_n`
-      background: ${c.colors.primary}11;
+      background: linear-gradient(${c.colors.primary}11, ${c.colors.primary}11), ${c.colors.background};
       font-weight: 600;
     `}
 `,I1=mt.div`
