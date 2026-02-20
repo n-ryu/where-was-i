@@ -41,6 +41,7 @@ const TaskLabel = styled.div<{ $dayStatus: DayStatus; $isSelected: boolean }>`
   z-index: 3;
   background: ${({ theme }) => theme.colors.background};
   border-right: 1px solid ${({ theme }) => theme.colors.border};
+  box-shadow: 0 1px 0 ${({ theme }) => theme.colors.border};
   cursor: pointer;
   transition: background 150ms ease;
 
@@ -65,7 +66,7 @@ const TaskLabel = styled.div<{ $dayStatus: DayStatus; $isSelected: boolean }>`
   ${({ $isSelected, theme }) =>
     $isSelected &&
     css`
-      background: ${theme.colors.primary}11;
+      background: linear-gradient(${theme.colors.primary}11, ${theme.colors.primary}11), ${theme.colors.background};
       font-weight: 600;
     `}
 `
