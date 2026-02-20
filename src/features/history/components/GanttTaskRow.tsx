@@ -38,7 +38,7 @@ const TaskLabel = styled.div<{ $dayStatus: DayStatus; $isSelected: boolean }>`
   gap: 4px;
   position: sticky;
   left: 0;
-  z-index: 1;
+  z-index: 3;
   background: ${({ theme }) => theme.colors.background};
   border-right: 1px solid ${({ theme }) => theme.colors.border};
   cursor: pointer;
@@ -48,7 +48,6 @@ const TaskLabel = styled.div<{ $dayStatus: DayStatus; $isSelected: boolean }>`
     $dayStatus === 'completed_today' &&
     css`
       color: ${theme.colors.textSecondary};
-      opacity: 0.7;
     `}
 
   ${({ $dayStatus, theme }) =>
