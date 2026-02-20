@@ -3,6 +3,7 @@ import styled from 'styled-components'
 import { useHistory } from '@/features/history/hooks/useHistory'
 import { DayPicker } from '@/features/history/components/DayPicker'
 import { GanttChart } from '@/features/history/components/GanttChart'
+import { TodoDurationSummary } from '@/features/history/components/TodoDurationSummary'
 import { EventHistoryList } from '@/features/history/components/EventHistoryList'
 
 export const PageContainer = styled.div`
@@ -98,12 +99,19 @@ export const HistoryPage = ({ onNavigateBack }: HistoryPageProps) => {
           selectedTodoId={selectedTodoId}
           onSelectTodo={handleSelectTodo}
         />
+        {selectedTodoId && (
+          <TodoDurationSummary
+            timeBlocks={timeBlocks}
+            selectedTodoId={selectedTodoId}
+            todoLookup={todoLookup}
+            onClearFilter={() => setSelectedTodoId(null)}
+          />
+        )}
         <EventHistoryList
           historyEvents={historyEvents}
           todos={todoLookup}
           selectedDate={selectedDate}
           selectedTodoId={selectedTodoId}
-          onClearFilter={() => setSelectedTodoId(null)}
         />
       </ScrollableArea>
     </PageContainer>

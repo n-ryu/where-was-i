@@ -22,7 +22,6 @@ interface EventHistoryListProps {
   todos: Map<string, Todo>
   selectedDate: Date
   selectedTodoId: string | null
-  onClearFilter: () => void
 }
 
 const EVENT_TYPE_LABELS: Record<TodoHistoryEventType, string> = {
@@ -61,9 +60,10 @@ const timeToMinutes = (timeStr: string): number => {
 
 // --- Styled Components ---
 
-const SectionContainer = styled.div`
+const SectionContainer = styled.div<{ $noBorderTop?: boolean }>`
   padding: ${({ theme }) => `${theme.spacing.md} ${theme.spacing.md} ${theme.spacing.lg}`};
-  border-top: 1px solid ${({ theme }) => theme.colors.border};
+  ${({ $noBorderTop, theme }) =>
+    !$noBorderTop && `border-top: 1px solid ${theme.colors.border};`}
 `
 
 const SectionHeader = styled.div`
@@ -81,25 +81,6 @@ const SectionTitle = styled.h2`
   color: ${({ theme }) => theme.colors.textSecondary};
 `
 
-const ShowAllButton = styled.button`
-  background: none;
-  border: none;
-  padding: ${({ theme }) => `${theme.spacing.xs} ${theme.spacing.sm}`};
-  cursor: pointer;
-  color: ${({ theme }) => theme.colors.primary};
-  font-size: 0.75rem;
-  font-weight: 500;
-  border-radius: ${({ theme }) => theme.radii.sm};
-  transition: background 150ms ease;
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.surface};
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
-`
 
 const ItemList = styled.ul`
   list-style: none;
@@ -348,7 +329,6 @@ export const EventHistoryList = ({
   todos,
   selectedDate,
   selectedTodoId,
-  onClearFilter,
 }: EventHistoryListProps) => {
   const updateEventTime = useSetAtom(updateEventTimeAtom)
   const deleteHistoryItem = useSetAtom(deleteHistoryItemAtom)
@@ -587,12 +567,9 @@ export const EventHistoryList = ({
   const editRange = editItem ? getEditableRange(editItem) : null
 
   return (
-    <SectionContainer>
+    <SectionContainer $noBorderTop={selectedTodoId !== null}>
       <SectionHeader>
         <SectionTitle>Events</SectionTitle>
-        {selectedTodoId !== null && (
-          <ShowAllButton onClick={onClearFilter}>전체 보기</ShowAllButton>
-        )}
       </SectionHeader>
       {items.length === 0 ? (
         <EmptyMessage>No events on this day</EmptyMessage>

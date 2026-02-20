@@ -44,7 +44,6 @@ export const WithActivity: Story = {
         todos={sampleTodos}
         selectedDate={sampleDate}
         selectedTodoId={null}
-        onClearFilter={fn()}
       />
     </PageContainer>
   ),
@@ -74,7 +73,6 @@ export const NoActivity: Story = {
         todos={new Map()}
         selectedDate={sampleDate}
         selectedTodoId={null}
-        onClearFilter={fn()}
       />
     </PageContainer>
   ),
