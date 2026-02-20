@@ -9,6 +9,7 @@ import {
   getSessionEditableRange,
   getPointEventEditableRange,
   computeEditTimestamp,
+  formatDuration,
 } from './sessionUtils'
 import type { Session } from './sessionUtils'
 
@@ -32,6 +33,44 @@ const mkDate = (h: number, m = 0, s = 0, ms = 0) => {
   d.setHours(h, m, s, ms)
   return d
 }
+
+// --- formatDuration ---
+
+describe('formatDuration', () => {
+  it('returns 0m for zero', () => {
+    expect(formatDuration(0)).toBe('0m')
+  })
+
+  it('returns 0m for negative values', () => {
+    expect(formatDuration(-1000)).toBe('0m')
+  })
+
+  it('returns 0m for under 1 minute', () => {
+    expect(formatDuration(30_000)).toBe('0m')
+    expect(formatDuration(59_999)).toBe('0m')
+  })
+
+  it('returns minutes only for under 1 hour', () => {
+    expect(formatDuration(60_000)).toBe('1m')
+    expect(formatDuration(45 * 60_000)).toBe('45m')
+    expect(formatDuration(59 * 60_000)).toBe('59m')
+  })
+
+  it('returns hours only for exact hours', () => {
+    expect(formatDuration(60 * 60_000)).toBe('1h')
+    expect(formatDuration(3 * 60 * 60_000)).toBe('3h')
+  })
+
+  it('returns hours and minutes for mixed', () => {
+    expect(formatDuration(90 * 60_000)).toBe('1h 30m')
+    expect(formatDuration(150 * 60_000)).toBe('2h 30m')
+  })
+
+  it('floors partial minutes', () => {
+    expect(formatDuration(61_000)).toBe('1m') // 1m 1s → 1m
+    expect(formatDuration(119_999)).toBe('1m') // 1m 59.999s → 1m
+  })
+})
 
 // --- sortEvents ---
 

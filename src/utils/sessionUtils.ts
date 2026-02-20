@@ -344,6 +344,19 @@ export const resolveConflicts = (
   return { updates: validUpdates, deletes: [...new Set(deletes)] }
 }
 
+// --- Duration formatting ---
+
+export const formatDuration = (ms: number): string => {
+  if (ms <= 0) return '0m'
+  const totalMinutes = Math.floor(ms / 60000)
+  if (totalMinutes < 1) return '0m'
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  if (hours === 0) return `${minutes}m`
+  if (minutes === 0) return `${hours}h`
+  return `${hours}h ${minutes}m`
+}
+
 // --- Timestamp computation ---
 
 const getMinuteValue = (date: Date): number =>

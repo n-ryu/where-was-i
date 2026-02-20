@@ -1,9 +1,11 @@
+import { useMemo } from 'react'
 import styled, { css } from 'styled-components'
 import type { TimeBlock, TimeMarker } from '@/stores/historyAtoms'
 import type { DayStatus } from './GanttChart'
 import { CompletedIcon, ActiveIcon, InProgressIcon, IdleIcon } from '@/components/StatusIcons'
 import { GanttTaskBar } from './GanttTaskBar'
 import { GanttEventMarker } from './GanttEventMarker'
+import { formatDuration } from '@/utils/sessionUtils'
 
 interface GanttTaskRowProps {
   todoId: string
@@ -69,6 +71,12 @@ const TaskLabel = styled.div<{ $dayStatus: DayStatus; $isSelected: boolean }>`
     `}
 `
 
+const LabelContent = styled.div`
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+`
+
 const LabelText = styled.span<{ $completed?: boolean }>`
   overflow: hidden;
   text-overflow: ellipsis;
@@ -79,6 +87,13 @@ const LabelText = styled.span<{ $completed?: boolean }>`
     css`
       text-decoration: line-through;
     `}
+`
+
+const DurationText = styled.span`
+  font-size: 0.6rem;
+  font-weight: 400;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  line-height: 1;
 `
 
 const StatusIconWrapper = styled.span`
@@ -99,6 +114,7 @@ const BarArea = styled.div<{ $totalWidth: number }>`
   height: 28px;
   width: ${({ $totalWidth }) => $totalWidth}px;
   flex-shrink: 0;
+  align-self: center;
 `
 
 const HatchingFill = styled.div`
@@ -125,6 +141,14 @@ export const GanttTaskRow = ({
   const totalWidth = (hourEnd - hourStart) * pixelsPerHour
   const Icon = statusIconMap[dayStatus]
 
+  const totalDurationMs = useMemo(() => {
+    const now = new Date()
+    return blocks.reduce((sum, block) => {
+      const end = block.endTime ?? now
+      return sum + (end.getTime() - block.startTime.getTime())
+    }, 0)
+  }, [blocks])
+
   return (
     <Row>
       <TaskLabel
@@ -136,7 +160,10 @@ export const GanttTaskRow = ({
         <StatusIconWrapper>
           <Icon size={12} />
         </StatusIconWrapper>
-        <LabelText $completed={dayStatus === 'completed_today'}>{todoTitle}</LabelText>
+        <LabelContent>
+          <LabelText $completed={dayStatus === 'completed_today'}>{todoTitle}</LabelText>
+          <DurationText>{formatDuration(totalDurationMs)}</DurationText>
+        </LabelContent>
       </TaskLabel>
       <BarArea $totalWidth={totalWidth}>
         {dayStatus === 'idle' && <HatchingFill />}
